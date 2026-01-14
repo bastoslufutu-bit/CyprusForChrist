@@ -3,40 +3,40 @@
 
 # Django Core
 Django>=4.2,<5.0
-djangorestframework>=3.14.0
-djangorestframework-simplejwt>=5.3.0
-django-cors-headers>=4.0.0
+djangorestframework
+djangorestframework-simplejwt
+django-cors-headers
 
 # MySQL - Primary Database
-PyMySQL>=1.1.0
+PyMySQL
 
 # Authentication & Security
-django-otp>=1.2.0
-qrcode>=7.4.0
-pyotp>=2.8.0
-cryptography>=41.0.0
+django-otp
+qrcode
+pyotp
+cryptography
 
 # OpenAI Integration
 openai
-google-generativeai>=1.0.0
+google-generativeai
 
 # PayPal Integration
-paypalrestsdk>=1.13.0
+paypalrestsdk
 
 # Utilities
-python-decouple>=3.8
-requests>=2.31.0
-Pillow>=10.0.0
-python-slugify>=8.0.0
-python-dateutil>=2.8.0
+python-decouple
+requests
+Pillow
+python-slugify
+python-dateutil
 
 # PDF Generation (for receipts)
-reportlab>=4.0.0
-pypdf2>=3.0.0
+reportlab
+pypdf2
 
 # API Documentation
-drf-yasg>=1.21.0
+drf-yasg
 
 # Production
-gunicorn>=21.2.0
-uvicorn>=0.23.0
+gunicorn
+uvicorn
