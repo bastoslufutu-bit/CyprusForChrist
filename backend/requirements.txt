@@ -9,6 +9,7 @@ django-cors-headers
 
 # MySQL - Primary Database
 PyMySQL
+psycopg2-binary
 
 # Authentication & Security
 django-otp
@@ -25,6 +26,7 @@ paypalrestsdk
 
 # Utilities
 python-decouple
+dj-database-url
 requests
 Pillow
 python-slugify
