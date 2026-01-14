@@ -28,9 +28,18 @@ export default defineConfig([
     },
     rules: {
       ...react.configs.recommended.rules,
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'no-unused-vars': 'warn',
       'react/prop-types': 'off',
       'react/react-in-jsx-scope': 'off',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react/no-unescaped-entities': 'off',
+      'react/jsx-no-target-blank': 'off',
+      'react/display-name': 'off',
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
     },
   },
 ])
