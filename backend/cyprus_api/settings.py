@@ -103,12 +103,13 @@ WSGI_APPLICATION = 'cyprus_api.wsgi.application'
 # Database Configuration
 # Use PostgreSQL on Railway (via DATABASE_URL), MySQL locally
 import dj_database_url
+import os
 
-if config('DATABASE_URL', default=None):
+if os.environ.get('DATABASE_URL'):
     # Production: PostgreSQL on Railway
     DATABASES = {
         'default': dj_database_url.config(
-            default=config('DATABASE_URL'),
+            default=os.environ.get('DATABASE_URL'),
             conn_max_age=600,
             conn_health_checks=True,
         )
