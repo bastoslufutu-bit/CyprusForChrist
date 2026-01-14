@@ -52,7 +52,8 @@ const Register = () => {
 
             // Get user data to check role
             const token = localStorage.getItem('access_token');
-            const profileResponse = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const profileResponse = await fetch(`${baseUrl}/auth/profile/`, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },

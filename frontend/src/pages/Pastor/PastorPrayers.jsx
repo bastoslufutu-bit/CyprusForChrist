@@ -22,7 +22,8 @@ const PastorPrayers = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/prayers/', {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/prayers/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -37,7 +38,8 @@ const PastorPrayers = () => {
     const handleUpdateStatus = async (id, newStatus) => {
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/prayers/${id}/`, {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/prayers/${id}/`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
@@ -58,7 +60,8 @@ const PastorPrayers = () => {
         if (!confirm('Voulez-vous vraiment supprimer cette demande de prière ?')) return;
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/prayers/${id}/`, {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/prayers/${id}/`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

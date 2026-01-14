@@ -16,9 +16,9 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,cyprusforchrist-production.up.railway.app').split(',')
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,cyprusforchrist-production.up.railway.app,.vercel.app').split(',')
 
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000,https://cyprusforchrist-production.up.railway.app').split(',')
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000,https://cyprusforchrist-production.up.railway.app,https://frontend-beryl-mu-5ladv1yqdl.vercel.app').split(',')
 
 
 # Application definition
@@ -68,7 +68,7 @@ MIDDLEWARE = [
 # CORS Configuration
 # CORS Configuration
 CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://127.0.0.1:5173').split(',')
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:5173,http://127.0.0.1:5173,https://frontend-beryl-mu-5ladv1yqdl.vercel.app').split(',')
 
 ROOT_URLCONF = 'cyprus_api.urls'
 
@@ -90,36 +90,73 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'cyprus_api.wsgi.application'
 
-# Database Configuration
-# Use PostgreSQL on Railway (via DATABASE_URL), MySQL locally
+# Database Configuration - Robust Fallback Logic
 import dj_database_url
 import os
+import sys
+
+# DEBUG: Print environment variables to debug connection issue (Masking passwords)
+print("DEBUG: Checking Database Configuration...")
+env_keys = [k for k in os.environ.keys()]
+print(f"DEBUG: Available Env Keys: {env_keys}")
+print(f"DEBUG: DATABASE_URL present: {'DATABASE_URL' in os.environ}")
+print(f"DEBUG: MYSQLHOST present: {'MYSQLHOST' in os.environ}")
+print(f"DEBUG: MYSQL_URL present: {'MYSQL_URL' in os.environ}")
+
+DATABASES = {}
 
 if os.environ.get('DATABASE_URL'):
-    # Production: PostgreSQL on Railway
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600,
-            conn_health_checks=True,
-        )
-    }
-else:
-    # Development: MySQL
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': config('DB_NAME', default='cyprus_for_christ'),
-            'USER': config('DB_USER', default='root'),
-            'PASSWORD': config('DB_PASSWORD', default=''),
-            'HOST': config('DB_HOST', default='localhost'),
-            'PORT': config('DB_PORT', default='3306'),
-            'OPTIONS': {
-                'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-                'charset': 'utf8mb4',
-            }
+    print("DEBUG: Configuration Method -> DATABASE_URL")
+    DATABASES['default'] = dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+elif os.environ.get('MYSQL_URL'):
+    print("DEBUG: Configuration Method -> MYSQL_URL")
+    DATABASES['default'] = dj_database_url.config(
+        default=os.environ.get('MYSQL_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+elif os.environ.get('MYSQLHOST'):
+    print("DEBUG: Configuration Method -> MYSQLHOST Env Vars")
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('MYSQLDATABASE', os.environ.get('DB_NAME', 'cyprus_for_christ')),
+        'USER': os.environ.get('MYSQLUSER', os.environ.get('DB_USER', 'root')),
+        'PASSWORD': os.environ.get('MYSQLPASSWORD', os.environ.get('DB_PASSWORD', '')),
+        'HOST': os.environ.get('MYSQLHOST'),
+        'PORT': os.environ.get('MYSQLPORT', os.environ.get('DB_PORT', '3306')),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
         }
     }
+else:
+    print("DEBUG: Configuration Method -> Localhost/Default (Fallback)")
+    # Default to localhost variables if nothing else is found
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': config('DB_NAME', default='cyprus_for_christ'),
+        'USER': config('DB_USER', default='root'),
+        'PASSWORD': config('DB_PASSWORD', default=''),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='3306'),
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',
+        }
+    }
+
+# Ensure PyMySQL is used if it's a mysql backend
+if DATABASES['default']['ENGINE'] == 'django.db.backends.mysql':
+    try:
+        import pymysql
+        pymysql.install_as_MySQLdb()
+        print("DEBUG: PyMySQL installed as MySQLdb")
+    except ImportError:
+        print("DEBUG: PyMySQL not installed")
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.User'

@@ -86,7 +86,8 @@ const PastorAvailability = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/appointments/availabilities/', {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/appointments/availabilities/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -100,9 +101,10 @@ const PastorAvailability = () => {
 
     const handleSave = async (data) => {
         const token = localStorage.getItem('access_token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
         const url = editingAvail
-            ? `http://127.0.0.1:8000/api/appointments/availabilities/${editingAvail.id}/`
-            : 'http://127.0.0.1:8000/api/appointments/availabilities/';
+            ? `${baseUrl}/appointments/availabilities/${editingAvail.id}/`
+            : `${baseUrl}/appointments/availabilities/`;
 
         try {
             const response = await fetch(url, {
@@ -131,7 +133,8 @@ const PastorAvailability = () => {
         if (!confirm('Voulez-vous vraiment supprimer cet horaire ?')) return;
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/appointments/availabilities/${id}/`, {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/appointments/availabilities/${id}/`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -195,8 +198,8 @@ const PastorAvailability = () => {
                             key={avail.id}
                             layout
                             className={`p-6 rounded-3xl border transition-all ${avail.is_active
-                                    ? 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 shadow-sm'
-                                    : 'bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800 opacity-60'
+                                ? 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700 shadow-sm'
+                                : 'bg-gray-50 dark:bg-slate-900 border-gray-100 dark:border-slate-800 opacity-60'
                                 }`}
                         >
                             <div className="flex justify-between items-center mb-6">

@@ -116,7 +116,8 @@ const PastorSermons = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/sermons/', {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/sermons/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -130,9 +131,10 @@ const PastorSermons = () => {
 
     const handleSave = async (formData) => {
         const token = localStorage.getItem('access_token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
         const url = editingSermon
-            ? `http://127.0.0.1:8000/api/sermons/${editingSermon.id}/`
-            : 'http://127.0.0.1:8000/api/sermons/';
+            ? `${baseUrl}/sermons/${editingSermon.id}/`
+            : `${baseUrl}/sermons/`;
 
         try {
             const response = await fetch(url, {
@@ -158,7 +160,8 @@ const PastorSermons = () => {
         if (!confirm('Voulez-vous vraiment supprimer ce sermon ?')) return;
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/sermons/${id}/`, {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/sermons/${id}/`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

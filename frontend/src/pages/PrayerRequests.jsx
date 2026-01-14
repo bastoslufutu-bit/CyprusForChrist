@@ -35,7 +35,8 @@ const PrayerRequests = () => {
                 headers['Authorization'] = `Bearer ${token}`;
             }
 
-            const response = await fetch('http://127.0.0.1:8000/api/prayers/', {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/prayers/`, {
                 method: 'POST',
                 headers: headers,
                 body: JSON.stringify({

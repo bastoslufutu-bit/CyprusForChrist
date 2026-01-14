@@ -37,11 +37,13 @@ const PastorDashboardPage = () => {
             const token = localStorage.getItem('access_token');
             const headers = { 'Authorization': `Bearer ${token}` };
 
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+
             const [prayersRes, sermonsRes, donationsRes, appointmentsRes] = await Promise.all([
-                fetch('http://127.0.0.1:8000/api/prayers/', { headers }),
-                fetch('http://127.0.0.1:8000/api/sermons/', { headers }),
-                fetch('http://127.0.0.1:8000/api/donations/', { headers }),
-                fetch('http://127.0.0.1:8000/api/appointments/', { headers })
+                fetch(`${baseUrl}/prayers/`, { headers }),
+                fetch(`${baseUrl}/sermons/`, { headers }),
+                fetch(`${baseUrl}/donations/`, { headers }),
+                fetch(`${baseUrl}/appointments/`, { headers })
             ]);
 
             const [pData, sData, dData, aData] = await Promise.all([

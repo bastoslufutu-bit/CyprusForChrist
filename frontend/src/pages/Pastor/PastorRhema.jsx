@@ -75,7 +75,8 @@ const PastorRhema = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/rhema/', {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/rhema/`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -89,9 +90,10 @@ const PastorRhema = () => {
 
     const handleSave = async (data) => {
         const token = localStorage.getItem('access_token');
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
         const url = editingRhema
-            ? `http://127.0.0.1:8000/api/rhema/${editingRhema.id}/`
-            : 'http://127.0.0.1:8000/api/rhema/';
+            ? `${baseUrl}/rhema/${editingRhema.id}/`
+            : `${baseUrl}/rhema/`;
 
         try {
             const response = await fetch(url, {
@@ -120,7 +122,8 @@ const PastorRhema = () => {
         if (!confirm('Voulez-vous vraiment supprimer ce Rhema ?')) return;
         try {
             const token = localStorage.getItem('access_token');
-            const response = await fetch(`http://127.0.0.1:8000/api/rhema/${id}/`, {
+            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
+            const response = await fetch(`${baseUrl}/rhema/${id}/`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
