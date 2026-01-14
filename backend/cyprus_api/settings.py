@@ -16,8 +16,8 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-produc
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
-CSRF_TRUSTED_ORIGINS = [config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000')]
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,cyprusforchrist-production.up.railway.app').split(',')
+CSRF_TRUSTED_ORIGINS = [config('CSRF_TRUSTED_ORIGINS', default='http://localhost:8000,http://127.0.0.1:8000,https://cyprusforchrist-production.up.railway.app')]
 if isinstance(CSRF_TRUSTED_ORIGINS[0], str) and ',' in CSRF_TRUSTED_ORIGINS[0]:
     CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS[0].split(',')
 
