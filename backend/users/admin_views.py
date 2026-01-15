@@ -93,8 +93,16 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def create_pastor(self, request):
         """Create a new pastor"""
-        serializer = CreatePastorSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            serializer = CreatePastorSerializer(data=request.data)
+            if serializer.is_valid():
+                user = serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            import traceback
+            return Response({
+                'error': 'Internal Server Error',
+                'message': str(e),
+                'traceback': traceback.format_exc()
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
