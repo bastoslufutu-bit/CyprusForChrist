@@ -20,12 +20,15 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'cyprus_api.settings')
 django.setup()
 from users.models import User
-if not User.objects.filter(email='bastoslufutu@gmail.com').exists():
+email = 'bastoslufutu@gmail.com'
+if not User.objects.filter(email=email).exists():
     User.objects.create_superuser(
-        email='bastoslufutu@gmail.com',
+        username=email,
+        email=email,
         password='admin123',
         first_name='Bastos',
-        last_name='Lufutu'
+        last_name='Lufutu',
+        role='ADMIN'
     )
     print('Superuser created successfully!')
 else:
