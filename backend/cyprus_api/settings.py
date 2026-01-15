@@ -276,7 +276,7 @@ YOUTUBE_URL = config('YOUTUBE_URL', default='https://youtube.com/@CyprusForChris
 # Email Configuration
 EMAIL_BACKEND = config(
     'EMAIL_BACKEND',
-    default='django.core.mail.backends.console.EmailBackend'
+    default='django.core.mail.backends.smtp.EmailBackend' if config('EMAIL_HOST_PASSWORD', default='') else 'django.core.mail.backends.console.EmailBackend'
 )
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
@@ -305,6 +305,9 @@ CHURCH_INFO = {
     'phone': config('CHURCH_PHONE', default=''),
     'website': config('CHURCH_WEBSITE', default='https://www.cyprusforchrist.org'),
 }
+
+# Frontend URL for emails
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
 # Security Settings
 if not DEBUG:
