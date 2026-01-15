@@ -51,6 +51,26 @@ urlpatterns = [
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     
+    # API Root
+    path('api/', lambda r: JsonResponse({
+        'message': 'Cyprus For Christ API',
+        'version': '1.0',
+        'endpoints': {
+            'auth': '/api/auth/',
+            'sermons': '/api/sermons/',
+            'prayers': '/api/prayers/',
+            'ai': '/api/ai/',
+            'rhema': '/api/rhema/',
+            'donations': '/api/donations/',
+            'contact': '/api/contact/',
+            'about': '/api/about/',
+            'dashboard': '/api/dashboard/',
+            'appointments': '/api/appointments/',
+            'admin': '/api/admin/',
+        },
+        'documentation': '/swagger/',
+    })),
+    
     # API v1 Endpoints
     path('api/auth/', include('users.urls')),
     path('api/sermons/', include('sermons.urls')),
