@@ -31,14 +31,21 @@ class UserService:
             "Si vous n'avez pas demandé de réinitialisation, veuillez ignorer cet email."
         )
         
-        send_mail(
-            subject,
-            message,
-            settings.DEFAULT_FROM_EMAIL,
-            [user.email],
-            fail_silently=False,
-        )
-        return True
+        try:
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+                fail_silently=False,
+            )
+            return True
+        except Exception as e:
+            # Re-raise with a more descriptive message if possible
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error sending password reset email to {user.email}: {str(e)}")
+            raise e
 
     @staticmethod
     @transaction.atomic

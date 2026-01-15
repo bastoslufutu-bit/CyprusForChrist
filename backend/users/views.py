@@ -169,10 +169,15 @@ class PasswordResetRequestView(views.APIView):
         users = User.objects.filter(email=email)
         
         if users.exists():
-            for user in users:
-                UserService.send_password_reset_email(user)
-            
-            return Response({"message": "Un email de réinitialisation a été envoyé."}, status=status.HTTP_200_OK)
+            try:
+                for user in users:
+                    UserService.send_password_reset_email(user)
+                return Response({"message": "Un email de réinitialisation a été envoyé."}, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({
+                    "error": "Erreur d'envoi",
+                    "message": f"Impossible d'envoyer l'email : {str(e)}. Vérifiez la configuration SMTP."
+                }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response({"message": "Si cet email est enregistré, vous recevrez un lien de réinitialisation."}, status=status.HTTP_200_OK)
 
