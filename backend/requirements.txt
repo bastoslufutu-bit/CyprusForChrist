@@ -11,6 +11,9 @@ django-cors-headers
 # MySQL - Primary Database
 PyMySQL
 
+# PostgreSQL - For Render deployment
+psycopg2-binary
+
 # Authentication & Security
 django-otp
 qrcode

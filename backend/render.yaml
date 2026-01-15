@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: cyprusforchrist-backend
+    runtime: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn cyprus_api.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: False
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: cyprusforchrist-db
+          property: connectionString
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+databases:
+  - name: cyprusforchrist-db
+    databaseName: cyprusforchrist
+    user: cyprusforchrist
