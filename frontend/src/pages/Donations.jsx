@@ -7,21 +7,17 @@ import {
     FaUsers,
     FaGlobe,
     FaShieldAlt,
-    FaReceipt,
-    FaCreditCard,
-    FaPaypal,
-    FaLock,
     FaCheckCircle,
-    FaChartLine
+    FaChartLine,
+    FaWhatsapp,
+    FaEnvelope,
+    FaArrowDown
 } from 'react-icons/fa'
 import { useLanguage } from '../context/LanguageContext'
 
 const Donations = () => {
     const { t } = useLanguage()
     const [selectedProject, setSelectedProject] = useState('general')
-    const [donationAmount, setDonationAmount] = useState(50)
-    const [isRecurring, setIsRecurring] = useState(false)
-    const [paymentMethod, setPaymentMethod] = useState('card')
 
     const projects = [
         {
@@ -32,6 +28,8 @@ const Donations = () => {
             current: 0,
             icon: FaChurch,
             color: 'from-gold to-lightGold',
+            activeColor: 'text-gold',
+            message: "Chaque don est une semence d’amour, de foi et d’espérance. Votre générosité soutient l’œuvre de Dieu et bénit des vies.",
             features: t('home.donations.projects.general.features', { returnObjects: true })
         },
         {
@@ -42,6 +40,8 @@ const Donations = () => {
             current: 0,
             icon: FaGlobe,
             color: 'from-royalBlue to-blue-400',
+            activeColor: 'text-royalBlue',
+            message: "Votre soutien permet d'envoyer des missionnaires, de planter des églises et de répandre l'Évangile jusqu'aux extrémités de la terre.",
             features: t('home.donations.projects.missions.features', { returnObjects: true })
         },
         {
@@ -52,6 +52,8 @@ const Donations = () => {
             current: 0,
             icon: FaHandHoldingHeart,
             color: 'from-bordeaux to-pink-600',
+            activeColor: 'text-bordeaux',
+            message: "Aidez-nous à prendre soin des veuves, des orphelins et des démunis. Votre don apporte un réconfort concret et témoigne de l'amour du Christ.",
             features: t('home.donations.projects.benevolence.features', { returnObjects: true })
         },
         {
@@ -62,94 +64,13 @@ const Donations = () => {
             current: 0,
             icon: FaUsers,
             color: 'from-green-500 to-emerald-400',
+            activeColor: 'text-green-500',
+            message: "Investissez dans la jeunesse pour former les leaders de demain. Votre don finance des camps, des formations et des programmes d'encadrement.",
             features: t('home.donations.projects.youth.features', { returnObjects: true })
         }
     ]
 
-    const donationOptions = [
-        { amount: 20, label: t('home.donations.form.options.support') },
-        { amount: 50, label: t('home.donations.form.options.regular'), popular: true },
-        { amount: 100, label: t('home.donations.form.options.generous') },
-        { amount: 250, label: t('home.donations.form.options.visionary') },
-        { amount: 500, label: t('home.donations.form.options.transformer') }
-    ]
-
     const selectedProjectData = projects.find(p => p.id === selectedProject) || projects[0]
-
-    // Check for PayPal return parameters on mount
-    React.useEffect(() => {
-        const queryParams = new URLSearchParams(window.location.search);
-        const paymentId = queryParams.get('paymentId');
-        const payerId = queryParams.get('PayerID');
-
-        if (paymentId && payerId) {
-            executeDonation(paymentId, payerId);
-        }
-    }, []);
-
-    const executeDonation = async (paymentId, payerId) => {
-        try {
-            const response = await fetch('http://127.0.0.1:8000/api/donations/execute/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ payment_id: paymentId, payer_id: payerId }),
-            });
-
-            if (response.ok) {
-                alert(t('home.donations.form.success'));
-                // Clean URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-            } else {
-                alert(t('home.donations.form.error_validation'));
-            }
-        } catch (error) {
-            console.error("Error executing donation:", error);
-            alert(t('home.donations.form.error_finalization'));
-        }
-    }
-
-    const handleDonate = async () => {
-        if (!donationAmount) return
-
-        try {
-            const token = localStorage.getItem('access_token');
-            const headers = {
-                'Content-Type': 'application/json',
-            };
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            const returnUrl = `${window.location.origin}/donations`;
-            const cancelUrl = `${window.location.origin}/donations?status=cancel`;
-
-            const response = await fetch('http://127.0.0.1:8000/api/donations/create/', {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify({
-                    amount: donationAmount,
-                    currency: 'EUR',
-                    return_url: returnUrl,
-                    cancel_url: cancelUrl,
-                    is_anonymous: false // Could add checkbox for this
-                }),
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.approval_url) {
-                window.location.href = data.approval_url;
-            } else {
-                alert(t('home.donations.form.error_init'));
-            }
-        } catch (error) {
-            console.error("Error creating donation:", error);
-            alert(t('home.donations.form.error_tech'));
-        }
-    }
-
     const progressPercentage = (selectedProjectData.current / selectedProjectData.target) * 100
 
     return (
@@ -224,7 +145,7 @@ const Donations = () => {
                         >
                             <div className="flex items-center justify-between mb-4">
                                 <h3 className="text-xl font-bold text-bordeaux">{t('home.donations.progress.title')}</h3>
-                                <span className="text-2xl font-bold text-gold">
+                                <span className={`text-2xl font-bold ${selectedProjectData.activeColor || 'text-gold'}`}>
                                     ${selectedProjectData.current.toLocaleString()}
                                     <span className="text-gray-400 text-lg"> / ${selectedProjectData.target.toLocaleString()}</span>
                                 </span>
@@ -249,197 +170,112 @@ const Donations = () => {
                             {/* Project Stats */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="text-2xl font-bold text-gold">{progressPercentage.toFixed(0)}%</div>
+                                    <div className={`text-2xl font-bold ${selectedProjectData.activeColor || 'text-gold'}`}>{progressPercentage.toFixed(0)}%</div>
                                     <div className="text-sm text-gray-600">{t('home.donations.progress.budget')}</div>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="text-2xl font-bold text-gold">0</div>
+                                    <div className={`text-2xl font-bold ${selectedProjectData.activeColor || 'text-gold'}`}>0</div>
                                     <div className="text-sm text-gray-600">{t('home.donations.progress.donors')}</div>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="text-2xl font-bold text-gold">--</div>
+                                    <div className={`text-2xl font-bold ${selectedProjectData.activeColor || 'text-gold'}`}>--</div>
                                     <div className="text-sm text-gray-600">{t('home.donations.progress.days_left')}</div>
                                 </div>
                                 <div className="bg-gray-50 p-4 rounded-lg flex flex-col items-center justify-center">
-                                    <FaChartLine className="h-8 w-8 text-gold mb-2" />
+                                    <FaChartLine className={`h-8 w-8 mb-2 ${selectedProjectData.activeColor || 'text-gold'}`} />
                                     <div className="text-sm text-gray-600">{t('home.donations.progress.ongoing')}</div>
                                 </div>
                             </div>
                         </motion.div>
                     </div>
 
-                    {/* Right Column - Donation Form */}
+                    {/* Right Column - Manual Donation Info */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="space-y-8"
+                        className="space-y-8 h-full"
                     >
-                        {/* Donation Form */}
-                        <div className="bg-gradient-to-br from-bordeaux/10 to-gold/10 rounded-2xl p-6 shadow-xl border border-gold/20">
-                            <h2 className="text-2xl font-bold text-bordeaux mb-6">{t('home.donations.form.title')}</h2>
+                        {/* Intro Card - Modern Glassmorphism Design */}
+                        <div className="relative h-full overflow-hidden bg-white/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/50 z-10 flex flex-col items-center text-center transition-all duration-500">
 
-                            {/* Amount Selection */}
-                            <div className="mb-8">
-                                <label className="block text-gray-700 mb-4 font-medium">{t('home.donations.form.amount_label')}</label>
-                                <div className="grid grid-cols-3 gap-3 mb-4">
-                                    {donationOptions.map((option) => (
-                                        <button
-                                            key={option.amount}
-                                            onClick={() => setDonationAmount(option.amount)}
-                                            className={`p-4 rounded-xl border-2 transition-all duration-300 ${donationAmount === option.amount
-                                                ? 'border-gold bg-gradient-to-r from-gold to-lightGold text-white transform scale-105'
-                                                : 'border-gray-300 text-gray-700 hover:border-gold hover:bg-gold/10'
-                                                } ${option.popular ? 'relative' : ''}`}
-                                        >
-                                            {option.popular && (
-                                                <span className="absolute -top-2 -right-2 bg-gold text-white text-xs px-2 py-1 rounded-full">
-                                                    {t('home.donations.form.options.popular')}
-                                                </span>
-                                            )}
-                                            <div className="font-bold text-lg">${option.amount}</div>
-                                            <div className="text-xs mt-1">{option.label}</div>
-                                        </button>
-                                    ))}
-                                </div>
+                            {/* Decorative Elements - Fixed Theme */}
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gold/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                            <div className="absolute bottom-0 left-0 w-40 h-40 bg-bordeaux/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
 
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 font-bold">$</span>
-                                    <input
-                                        type="number"
-                                        value={donationAmount}
-                                        onChange={(e) => setDonationAmount(e.target.value ? Number(e.target.value) : '')}
-                                        placeholder={t('home.donations.form.custom_placeholder')}
-                                        className="w-full pl-10 pr-4 py-4 border-2 border-gray-300 rounded-xl focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
-                                    />
+                            {/* Title & Description */}
+                            <div className="mb-8 relative z-20">
+                                <span className={`inline-block py-1 px-3 rounded-full bg-gold/10 text-gold text-xs font-bold tracking-wider mb-4 border border-gold/20 uppercase`}>
+                                    Faire un don
+                                </span>
+                                <h2 className="text-3xl font-playfair font-bold text-gray-800 mb-4">{selectedProjectData.title}</h2>
+                                <div className="text-gray-600 italic text-lg leading-relaxed min-h-[60px]">
+                                    "{selectedProjectData.message}" <br />
                                 </div>
+                                <p className="text-gray-400 text-sm mt-3">
+                                    Pour le moment, nous privilégions une approche simple et humaine.
+                                </p>
                             </div>
 
-                            {/* Recurring Donation */}
-                            <div className="mb-8">
-                                <label className="flex items-center cursor-pointer">
-                                    <div className="relative">
-                                        <input
-                                            type="checkbox"
-                                            checked={isRecurring}
-                                            onChange={(e) => setIsRecurring(e.target.checked)}
-                                            className="sr-only"
-                                        />
-                                        <div className={`block w-14 h-8 rounded-full transition-colors ${isRecurring ? 'bg-gold' : 'bg-gray-300'}`}></div>
-                                        <div className={`dot absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform ${isRecurring ? 'transform translate-x-6' : ''}`}></div>
+                            {/* Direct Contact Action */}
+                            <div className="w-full bg-white/80 backdrop-blur-lg rounded-2xl p-6 border border-white/60 shadow-lg mb-8 transition-transform transform hover:-translate-y-1 duration-300 relative overflow-hidden group">
+                                <div className="flex justify-center mb-4">
+                                    <div className="p-4 bg-green-100/50 rounded-full shadow-lg shadow-green-100 animate-pulse">
+                                        <FaWhatsapp className="h-8 w-8 text-[#25D366]" />
                                     </div>
-                                    <div className="ml-4">
-                                        <div className="font-medium text-gray-800">{t('home.donations.form.recurring')}</div>
-                                        <p className="text-sm text-gray-600">{t('home.donations.form.recurring_desc')}</p>
-                                    </div>
-                                </label>
-                            </div>
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-800 mb-2">Contactez-nous directement</h3>
+                                <p className="text-gray-500 text-sm mb-6">
+                                    Cliquez ci-dessous pour obtenir les instructions de don pour <span className="font-bold text-gray-800">{selectedProjectData.title}</span>.
+                                </p>
 
-                            {/* Payment Method */}
-                            <div className="mb-8">
-                                <label className="block text-gray-700 mb-4 font-medium">{t('home.donations.form.payment_method')}</label>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <button
-                                        onClick={() => setPaymentMethod('card')}
-                                        className={`p-4 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${paymentMethod === 'card'
-                                            ? 'border-gold bg-gold/10'
-                                            : 'border-gray-300 hover:border-gold/50'
-                                            }`}
+                                {/* Visual Cue - Bouncing Arrow */}
+                                <div className="flex justify-center mb-2 animate-bounce">
+                                    <FaArrowDown className="h-4 w-4 text-green-500" />
+                                </div>
+
+                                <a
+                                    href={`https://wa.me/?text=Bonjour,%20je%20souhaite%20faire%20un%20don%20pour%20le%20projet%20"${selectedProjectData.title}".%20Merci%20de%20me%20donner%20les%20instructions.`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="w-full flex items-center justify-center space-x-2 bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white py-4 px-8 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl hover:shadow-green-500/30 transition-all duration-300 group relative overflow-hidden"
+                                >
+                                    <span className="relative z-10">Nous écrire maintenant</span>
+                                    <FaWhatsapp className="text-xl group-hover:rotate-12 transition-transform duration-300 relative z-10" />
+
+                                    {/* Button Shine Effect */}
+                                    <div className="absolute top-0 -left-[100%] w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12 group-hover:animate-shine" />
+                                </a>
+                                <div className="mt-4 text-center">
+                                    <a
+                                        href={`mailto:bastoslufutu@gmail.com?subject=Don%20pour%20le%20projet%20${encodeURIComponent(selectedProjectData.title)}&body=Bonjour%2C%0A%0AJe%20souhaite%20faire%20un%20don%20pour%20le%20projet%20"${encodeURIComponent(selectedProjectData.title)}".%20Pouvez-vous%20me%20transmettre%20les%20informations%20n%C3%A9cessaires%20(RIB%2FMobile%20Money)%20%3F%0A%0AMerci.`}
+                                        className="text-sm text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center gap-2"
                                     >
-                                        <FaCreditCard className={`h-6 w-6 mr-2 ${paymentMethod === 'card' ? 'text-gold' : 'text-gray-500'}`} />
-                                        <span className={`font-medium ${paymentMethod === 'card' ? 'text-gold' : 'text-gray-700'}`}>
-                                            {t('home.donations.form.card')}
-                                        </span>
-                                    </button>
-                                    <button
-                                        onClick={() => setPaymentMethod('paypal')}
-                                        className={`p-4 rounded-xl border-2 flex items-center justify-center transition-all duration-300 ${paymentMethod === 'paypal'
-                                            ? 'border-gold bg-gold/10'
-                                            : 'border-gray-300 hover:border-gold/50'
-                                            }`}
-                                    >
-                                        <FaPaypal className={`h-6 w-6 mr-2 ${paymentMethod === 'paypal' ? 'text-gold' : 'text-gray-500'}`} />
-                                        <span className={`font-medium ${paymentMethod === 'paypal' ? 'text-gold' : 'text-gray-700'}`}>
-                                            {t('home.donations.form.paypal')}
-                                        </span>
-                                    </button>
+                                        <FaEnvelope /> ou par email
+                                    </a>
                                 </div>
                             </div>
 
-                            {/* Security & Tax Info */}
-                            <div className="mb-8 space-y-4">
-                                {paymentMethod === 'card' && (
-                                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start">
-                                        <FaCreditCard className="h-5 w-5 text-blue-500 mr-3 mt-1" />
-                                        <p className="text-sm text-blue-800">
-                                            {t('home.donations.form.card_note')}
-                                        </p>
+                            {/* Transparency Section - Minimalist */}
+                            <div className="border-t border-gray-100 pt-6 w-full text-left">
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <FaShieldAlt className="text-gold" />
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Transparence</span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-3 text-xs text-gray-500 font-medium">
+                                    <div className="flex items-center space-x-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gold"></div>
+                                        <span>Dons volontaires</span>
                                     </div>
-                                )}
-                                <div className="flex items-center text-gray-600">
-                                    <FaLock className="h-5 w-5 text-gold mr-3" />
-                                    <span className="text-sm">{t('home.donations.form.secure')}</span>
-                                </div>
-                                <div className="flex items-center text-gray-600">
-                                    <FaReceipt className="h-5 w-5 text-gold mr-3" />
-                                    <span className="text-sm">{t('home.donations.form.receipt_auto')}</span>
-                                </div>
-                                <div className="flex items-center text-gray-600">
-                                    <FaShieldAlt className="h-5 w-5 text-gold mr-3" />
-                                    <span className="text-sm">{t('home.donations.form.privacy')}</span>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gold"></div>
+                                        <span>Sans contrainte</span>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gold"></div>
+                                        <span>100% à l'œuvre</span>
+                                    </div>
                                 </div>
                             </div>
-
-                            {/* Donate Button */}
-                            <button
-                                onClick={handleDonate}
-                                disabled={!donationAmount}
-                                className="w-full bg-gradient-to-r from-gold to-lightGold text-white py-5 rounded-xl font-bold text-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <div className="flex items-center justify-center">
-                                    <FaDonate className="mr-3 h-6 w-6" />
-                                    {isRecurring ? t('home.donations.form.donate_monthly') : t('home.donations.form.donate_once')}
-                                    {donationAmount && ` de $${donationAmount}`}
-                                </div>
-                            </button>
-                        </div>
-
-                        {/* Impact Stats */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="bg-gradient-to-r from-royalBlue to-blue-600 rounded-2xl p-6 text-white"
-                        >
-                            <h3 className="text-xl font-bold mb-4">{t('home.donations.impact.title')}</h3>
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center pb-3 border-b border-white/20">
-                                    <span>{t('home.donations.impact.bibles')}</span>
-                                    <span className="font-bold">0</span>
-                                </div>
-                                <div className="flex justify-between items-center pb-3 border-b border-white/20">
-                                    <span>{t('home.donations.impact.families')}</span>
-                                    <span className="font-bold">0</span>
-                                </div>
-                                <div className="flex justify-between items-center pb-3 border-b border-white/20">
-                                    <span>{t('home.donations.impact.missionaries')}</span>
-                                    <span className="font-bold">0</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span>{t('home.donations.impact.lives')}</span>
-                                    <span className="font-bold">{t('home.donations.impact.many')}</span>
-                                </div>
-                            </div>
-                        </motion.div>
-
-                        {/* Tax Receipt Info */}
-                        <div className="bg-white rounded-xl shadow-lg p-6">
-                            <h3 className="text-lg font-bold text-bordeaux mb-3">{t('home.donations.tax.title')}</h3>
-                            <p className="text-gray-600 text-sm mb-4">
-                                {t('home.donations.tax.desc')}
-                            </p>
-                            <button className="text-gold font-semibold hover:text-bordeaux transition-colors text-sm">
-                                {t('home.donations.tax.more')} →
-                            </button>
                         </div>
                     </motion.div>
                 </div>
