@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../../api/client';
 import { motion } from 'framer-motion';
 
 const ResetPassword = () => {
@@ -25,8 +25,7 @@ const ResetPassword = () => {
         setError('');
 
         try {
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await axios.post(`${baseUrl}/auth/password-reset-confirm/`, {
+            const response = await apiClient.post(`/auth/password-reset-confirm/`, {
                 uid,
                 token,
                 new_password: newPassword
@@ -36,7 +35,9 @@ const ResetPassword = () => {
                 navigate('/login');
             }, 3000);
         } catch (err) {
-            setError(err.response?.data?.error || "Le lien est invalide ou a expiré.");
+            const errorObj = err.response?.data?.error;
+            const errorMsg = typeof errorObj === 'object' ? errorObj.message : errorObj;
+            setError(errorMsg || "Le lien est invalide ou a expiré.");
         } finally {
             setIsLoading(false);
         }

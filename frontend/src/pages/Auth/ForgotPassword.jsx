@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../../api/client';
 import { motion } from 'framer-motion';
 
 const ForgotPassword = () => {
@@ -17,10 +17,12 @@ const ForgotPassword = () => {
         setError('');
 
         try {
-            const response = await axios.post('/api/auth/password-reset/', { email });
+            const response = await apiClient.post('/auth/password-reset/', { email });
             setMessage(response.data.message);
         } catch (err) {
-            setError(err.response?.data?.error || "Une erreur s'est produite lors de l'envoi de l'email.");
+            const errorObj = err.response?.data?.error;
+            const errorMsg = typeof errorObj === 'object' ? errorObj.message : errorObj;
+            setError(errorMsg || "Une erreur s'est produite lors de l'envoi de l'email.");
         } finally {
             setIsLoading(false);
         }

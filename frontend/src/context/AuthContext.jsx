@@ -78,7 +78,13 @@ export const AuthProvider = ({ children }) => {
                     setIsAuthenticated(true)
                 }
             } else {
-                throw new Error(data.detail || 'Login failed')
+                let errorMessage = 'Login failed'
+                if (data.error && data.error.message) {
+                    errorMessage = data.error.message
+                } else if (data.detail) {
+                    errorMessage = data.detail
+                }
+                throw new Error(errorMessage)
             }
         } catch (error) {
             console.error('Login error:', error)
@@ -124,10 +130,41 @@ export const AuthProvider = ({ children }) => {
                 // Extract specific error messages if available
                 let errorMessage = 'Registration failed'
                 if (result) {
-                    if (typeof result === 'object') {
-                        // Handle Django Rest Framework validation errors
+                    // Handle Custom Exception Handler Format
+                    if (result.error && result.error.details) {
+                        const details = result.error.details;
+                        const errors = [];
+
+                        // If details is a list (e.g. [ 'Error 1', 'Error 2' ])
+                        if (Array.isArray(details)) {
+                            errors.push(...details);
+                        }
+                        // If details is an object (e.g. { email: [ 'Error' ] })
+                        else if (typeof details === 'object') {
+                            for (const [key, value] of Object.entries(details)) {
+                                // Don't include the key if it's generic like 'detail' or 'non_field_errors'
+                                if (key === 'detail' || key === 'non_field_errors') {
+                                    errors.push(`${Array.isArray(value) ? value.join(' ') : value}`);
+                                } else {
+                                    // For field errors, just show the message, or "key: message"
+                                    // User wants "Cette adresse email..." not "email: Cette..."
+                                    // Let's just show the value which is the message.
+                                    errors.push(`${Array.isArray(value) ? value.join(' ') : value}`);
+                                }
+                            }
+                        }
+
+                        if (errors.length > 0) {
+                            errorMessage = errors.join('\n');
+                        } else {
+                            errorMessage = result.error.message || 'Unknown error';
+                        }
+                    }
+                    // Handle Standard Django Rest Framework validation errors (fallback)
+                    else if (typeof result === 'object') {
                         const errors = []
                         for (const [key, value] of Object.entries(result)) {
+                            if (key === 'success' || key === 'error') continue; // Skip custom wrapper keys if they slipped through
                             errors.push(`${key}: ${Array.isArray(value) ? value.join(' ') : value}`)
                         }
                         if (errors.length > 0) {
