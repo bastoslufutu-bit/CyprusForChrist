@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { FaEnvelope, FaLock, FaChurch, FaArrowLeft } from 'react-icons/fa';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import apiClient from '../../api/client';
 
 const Login = () => {
     const { t } = useLanguage();
@@ -42,17 +43,11 @@ const Login = () => {
             try {
                 await login(values.email, values.password);
 
-                // Get user data from localStorage (set by AuthContext)
-                const token = localStorage.getItem('access_token');
-                const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-                const profileResponse = await fetch(`${baseUrl}/auth/profile/`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
+                // Get user data to check role
+                const profileResponse = await apiClient.get('auth/profile/');
 
-                if (profileResponse.ok) {
-                    const userData = await profileResponse.json();
+                if (profileResponse.status === 200) {
+                    const userData = profileResponse.data;
 
                     // Redirect based on user role
                     if (userData.role === 'ADMIN') {
@@ -69,7 +64,8 @@ const Login = () => {
                 }
             } catch (err) {
                 console.error('Login error:', err);
-                setError(err.message || t('auth.login.error'));
+                const errMsg = err.response?.data?.error?.message || err.message || t('auth.login.error');
+                setError(String(errMsg));
             } finally {
                 setLoading(false);
             }

@@ -14,6 +14,7 @@ import {
 import { useForm } from 'react-hook-form'
 import { useAuth } from '../../context/AuthContext'
 import { useLanguage } from '../../context/LanguageContext'
+import apiClient from '../../api/client'
 
 const Register = () => {
     const { t } = useLanguage()
@@ -53,16 +54,10 @@ const Register = () => {
             })
 
             // Get user data to check role
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const profileResponse = await fetch(`${baseUrl}/auth/profile/`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
+            const profileResponse = await apiClient.get('auth/profile/');
 
-            if (profileResponse.ok) {
-                const userData = await profileResponse.json();
+            if (profileResponse.status === 200) {
+                const userData = profileResponse.data;
 
                 // Redirect based on user role
                 if (userData.role === 'ADMIN') {
@@ -77,7 +72,8 @@ const Register = () => {
             }
         } catch (error) {
             console.error('Registration error:', error)
-            setGeneralError(error.message || t('auth.register.validation.error_generic'))
+            const errMsg = error.response?.data?.error?.message || error.message || t('auth.register.validation.error_generic');
+            setGeneralError(String(errMsg))
         } finally {
             setIsSubmitting(false)
         }

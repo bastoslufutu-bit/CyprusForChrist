@@ -17,12 +17,23 @@ const ForgotPassword = () => {
         setError('');
 
         try {
-            const response = await apiClient.post('/auth/password-reset/', { email });
-            setMessage(response.data.message);
+            const response = await apiClient.post('auth/password-reset/', { email });
+            setMessage(String(response.data.message || "Email envoyé !"));
         } catch (err) {
-            const errorObj = err.response?.data?.error;
-            const errorMsg = typeof errorObj === 'object' ? errorObj.message : errorObj;
-            setError(errorMsg || "Une erreur s'est produite lors de l'envoi de l'email.");
+            const errorData = err.response?.data;
+            let errorMsg = "Une erreur s'est produite lors de l'envoi de l'email.";
+
+            if (errorData?.error?.message) {
+                errorMsg = errorData.error.message;
+            } else if (errorData?.message) {
+                errorMsg = errorData.message;
+            } else if (errorData?.detail) {
+                errorMsg = errorData.detail;
+            } else if (typeof errorData === 'string') {
+                errorMsg = errorData;
+            }
+
+            setError(String(errorMsg));
         } finally {
             setIsLoading(false);
         }

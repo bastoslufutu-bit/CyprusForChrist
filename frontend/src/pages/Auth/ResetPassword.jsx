@@ -25,19 +25,28 @@ const ResetPassword = () => {
         setError('');
 
         try {
-            const response = await apiClient.post(`/auth/password-reset-confirm/`, {
+            const response = await apiClient.post(`auth/password-reset-confirm/`, {
                 uid,
                 token,
                 new_password: newPassword
             });
-            setMessage(response.data.message);
+            setMessage(String(response.data.message || "Mot de passe réinitialisé !"));
             setTimeout(() => {
                 navigate('/login');
             }, 3000);
         } catch (err) {
-            const errorObj = err.response?.data?.error;
-            const errorMsg = typeof errorObj === 'object' ? errorObj.message : errorObj;
-            setError(errorMsg || "Le lien est invalide ou a expiré.");
+            const errorData = err.response?.data;
+            let errorMsg = "Le lien est invalide ou a expiré.";
+
+            if (errorData?.error?.message) {
+                errorMsg = errorData.error.message;
+            } else if (errorData?.message) {
+                errorMsg = errorData.message;
+            } else if (errorData?.detail) {
+                errorMsg = errorData.detail;
+            }
+
+            setError(String(errorMsg));
         } finally {
             setIsLoading(false);
         }
