@@ -3,8 +3,10 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from django.contrib.auth import get_user_model
-from users.serializers import UserSerializer
+from users.serializers import UserSerializer, CreatePastorSerializer
 from django.db.models import Q
+import string
+import secrets
 
 
 
@@ -91,23 +93,8 @@ class AdminUserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'])
     def create_pastor(self, request):
         """Create a new pastor"""
-        
-        data = request.data.copy()
-        data['role'] = 'PASTOR'
-        data['username'] = data.get('email') # Use email as username default
-        
-        # Generate random password
-        alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
-        password = ''.join(secrets.choice(alphabet) for _ in range(12))
-        data['password'] = password
-        
-        serializer = self.get_serializer(data=data)
+        serializer = CreatePastorSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            
-            # Return user data with generated password
-            response_data = serializer.data
-            response_data['generated_password'] = password
-            
-            return Response(response_data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
