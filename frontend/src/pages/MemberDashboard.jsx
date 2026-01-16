@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import apiClient from '../api/client';
 import {
     User as UserIcon,
     Heart,
@@ -44,16 +45,8 @@ const MemberDashboard = () => {
     const handleBooking = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/appointments/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(bookingData)
-            });
-            if (response.ok) {
+            const response = await apiClient.post('appointments/', bookingData);
+            if (response.status === 201 || response.status === 200) {
                 alert('Rendez-vous réservé avec succès !');
                 setShowBookingModal(false);
                 setBookingData({ pastor: '', subject: '', requested_date: '', requested_time: '', notes: '' });
@@ -67,16 +60,8 @@ const MemberDashboard = () => {
     const handlePrayerRequest = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/prayers/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(prayerData)
-            });
-            if (response.ok) {
+            const response = await apiClient.post('prayers/', prayerData);
+            if (response.status === 201 || response.status === 200) {
                 alert('Requête de prière envoyée !');
                 setShowPrayerModal(false);
                 setPrayerData({ title: '', content: '' });
@@ -90,21 +75,13 @@ const MemberDashboard = () => {
     const handleDonate = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/donations/create/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    amount: donationAmount,
-                    currency: 'EUR',
-                    is_anonymous: false
-                })
+            const response = await apiClient.post('donations/create/', {
+                amount: donationAmount,
+                currency: 'EUR',
+                is_anonymous: false
             });
-            const data = await response.json();
-            if (response.ok && data.approval_url) {
+            const data = response.data;
+            if (data.approval_url) {
                 window.location.href = data.approval_url;
             } else {
                 alert(data.error || 'Erreur lors de la création du don');
@@ -118,22 +95,16 @@ const MemberDashboard = () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const formData = new FormData();
-        formData.append('profile_picture', file);
+        const uploadData = new FormData();
+        uploadData.append('profile_picture', file);
 
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
-                method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
+            const response = await apiClient.patch('auth/profile/', uploadData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            if (response.ok) {
-                const updatedUser = await response.json();
-                updateUser(updatedUser);
+            if (response.status === 200 || response.status === 201) {
+                updateUser(response.data);
                 alert('Photo de profil mise à jour !');
             } else {
                 alert('Erreur lors de la mise à jour de la photo');
@@ -147,28 +118,24 @@ const MemberDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = { 'Authorization': `Bearer ${token}` };
-
             const [donationsRes, prayersRes, appointmentsRes, pastorsRes, availabilitiesRes] = await Promise.all([
-                fetch('http://127.0.0.1:8000/api/donations/', { headers }),
-                fetch('http://127.0.0.1:8000/api/prayers/', { headers }),
-                fetch('http://127.0.0.1:8000/api/appointments/', { headers }),
-                fetch('http://127.0.0.1:8000/api/auth/pastors/', { headers }),
-                fetch('http://127.0.0.1:8000/api/appointments/availability/', { headers })
+                apiClient.get('donations/'),
+                apiClient.get('prayers/'),
+                apiClient.get('appointments/'),
+                apiClient.get('auth/pastors/'),
+                apiClient.get('appointments/availabilities/')
             ]);
 
-            const processData = async (res) => {
-                if (!res.ok) return [];
-                const data = await res.json();
+            const processData = (res) => {
+                const data = res.data;
                 return Array.isArray(data) ? data : (data.results || []);
             };
 
-            setDonations(await processData(donationsRes));
-            setPrayers(await processData(prayersRes));
-            setAppointments(await processData(appointmentsRes));
-            setPastors(await processData(pastorsRes));
-            setAvailabilities(await processData(availabilitiesRes));
+            setDonations(processData(donationsRes));
+            setPrayers(processData(prayersRes));
+            setAppointments(processData(appointmentsRes));
+            setPastors(processData(pastorsRes));
+            setAvailabilities(processData(availabilitiesRes));
         } catch (error) {
             console.error('Error fetching member data:', error);
         } finally {

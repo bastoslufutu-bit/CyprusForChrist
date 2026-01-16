@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import apiClient from '../api/client'
 
 const AuthContext = createContext(undefined)
 
@@ -16,23 +17,9 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem('access_token')
         if (token) {
             try {
-                const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
-                // Verify token with backend
-                const response = await fetch(`${baseUrl}/auth/profile/`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                })
-
-                if (response.ok) {
-                    const userData = await response.json()
-                    setUser(userData)
-                    setIsAuthenticated(true)
-                } else {
-                    // Token invalid, clear it
-                    localStorage.removeItem('access_token')
-                    localStorage.removeItem('refresh_token')
-                }
+                const response = await apiClient.get('auth/profile/')
+                setUser(response.data)
+                setIsAuthenticated(true)
             } catch (error) {
                 console.error('Auth check error:', error)
                 localStorage.removeItem('access_token')
@@ -44,162 +31,121 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password) => {
         try {
-            // Connect to backend JWT login API
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
-            const response = await fetch(`${baseUrl}/auth/login/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    username: email, // Backend expects username field
-                    password: password,
-                }),
+            const response = await apiClient.post('auth/login/', {
+                username: email,
+                password: password,
             })
 
-            const data = await response.json()
+            const data = response.data
 
-            if (response.ok) {
-                // Store JWT tokens
-                localStorage.setItem('access_token', data.access)
-                localStorage.setItem('refresh_token', data.refresh)
+            localStorage.setItem('access_token', data.access)
+            localStorage.setItem('refresh_token', data.refresh)
 
-                // Fetch user profile
-                const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
-                const profileResponse = await fetch(`${baseUrl}/auth/profile/`, {
-                    headers: {
-                        'Authorization': `Bearer ${data.access}`,
-                    },
-                })
-
-                if (profileResponse.ok) {
-                    const userData = await profileResponse.json()
-                    setUser(userData)
-                    setIsAuthenticated(true)
-                }
-            } else {
-                let errorMessage = 'Login failed'
-                if (data.error && data.error.message) {
-                    errorMessage = data.error.message
-                } else if (data.detail) {
-                    errorMessage = data.detail
-                }
-                throw new Error(errorMessage)
-            }
+            const profileResponse = await apiClient.get('auth/profile/')
+            setUser(profileResponse.data)
+            setIsAuthenticated(true)
         } catch (error) {
             console.error('Login error:', error)
-            throw error
+            let errorMessage = 'Login failed'
+            if (error.response?.data?.error?.message) {
+                errorMessage = error.response.data.error.message
+            } else if (error.response?.data?.detail) {
+                errorMessage = error.response.data.detail
+            }
+            throw new Error(errorMessage)
         }
     }
 
     const register = async (data) => {
         try {
-            // Connect to backend registration API
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
-            const response = await fetch(`${baseUrl}/auth/register/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data),
-            })
+            const response = await apiClient.post('auth/register/', data)
+            const result = response.data
 
-            const result = await response.json()
+            if (result.access && result.refresh) {
+                localStorage.setItem('access_token', result.access)
+                localStorage.setItem('refresh_token', result.refresh)
 
-            if (response.ok) {
-                // Auto-login after registration if tokens are returned
-                if (result.access && result.refresh) {
-                    localStorage.setItem('access_token', result.access)
-                    localStorage.setItem('refresh_token', result.refresh)
-
-                    // Fetch user profile
-                    const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
-                    const profileResponse = await fetch(`${baseUrl}/auth/profile/`, {
-                        headers: {
-                            'Authorization': `Bearer ${result.access}`,
-                        },
-                    })
-
-                    if (profileResponse.ok) {
-                        const userData = await profileResponse.json()
-                        setUser(userData)
-                        setIsAuthenticated(true)
-                    }
-                }
-            } else {
-                // Extract specific error messages if available
-                let errorMessage = 'Registration failed'
-                if (result) {
-                    // Handle Custom Exception Handler Format
-                    if (result.error && result.error.details) {
-                        const details = result.error.details;
-                        const errors = [];
-
-                        // If details is a list (e.g. [ 'Error 1', 'Error 2' ])
-                        if (Array.isArray(details)) {
-                            errors.push(...details);
-                        }
-                        // If details is an object (e.g. { email: [ 'Error' ] })
-                        else if (typeof details === 'object') {
-                            for (const [key, value] of Object.entries(details)) {
-                                // Don't include the key if it's generic like 'detail' or 'non_field_errors'
-                                if (key === 'detail' || key === 'non_field_errors') {
-                                    errors.push(`${Array.isArray(value) ? value.join(' ') : value}`);
-                                } else {
-                                    // For field errors, just show the message, or "key: message"
-                                    // User wants "Cette adresse email..." not "email: Cette..."
-                                    // Let's just show the value which is the message.
-                                    errors.push(`${Array.isArray(value) ? value.join(' ') : value}`);
-                                }
-                            }
-                        }
-
-                        if (errors.length > 0) {
-                            errorMessage = errors.join('\n');
-                        } else {
-                            errorMessage = result.error.message || 'Unknown error';
-                        }
-                    }
-                    // Handle Standard Django Rest Framework validation errors (fallback)
-                    else if (typeof result === 'object') {
-                        const errors = []
-                        for (const [key, value] of Object.entries(result)) {
-                            if (key === 'success' || key === 'error') continue; // Skip custom wrapper keys if they slipped through
-                            errors.push(`${key}: ${Array.isArray(value) ? value.join(' ') : value}`)
-                        }
-                        if (errors.length > 0) {
-                            errorMessage = errors.join(' | ')
-                        } else if (result.detail) {
-                            errorMessage = result.detail
-                        }
-                    } else if (typeof result === 'string') {
-                        errorMessage = result
-                    }
-                }
-                throw new Error(errorMessage)
+                const profileResponse = await apiClient.get('auth/profile/')
+                setUser(profileResponse.data)
+                setIsAuthenticated(true)
             }
         } catch (error) {
             console.error('Registration error details:', error)
-            throw error
+            const result = error.response?.data
+            core / management / base.py
+            let errorMessage = 'Registration failed'
+            if (result) {
+                // Extracting error logic follows... (kept for clarity)
+                // Handle Custom Exception Handler Format
+                if (result.error && result.error.details) {
+                    const details = result.error.details;
+                    const errors = [];
+
+                    // If details is a list (e.g. [ 'Error 1', 'Error 2' ])
+                    if (Array.isArray(details)) {
+                        errors.push(...details);
+                    }
+                    // If details is an object (e.g. { email: [ 'Error' ] })
+                    else if (typeof details === 'object') {
+                        for (const [key, value] of Object.entries(details)) {
+                            // Don't include the key if it's generic like 'detail' or 'non_field_errors'
+                            if (key === 'detail' || key === 'non_field_errors') {
+                                errors.push(`${Array.isArray(value) ? value.join(' ') : value}`);
+                            } else {
+                                // For field errors, just show the message, or "key: message"
+                                // User wants "Cette adresse email..." not "email: Cette..."
+                                // Let's just show the value which is the message.
+                                errors.push(`${Array.isArray(value) ? value.join(' ') : value}`);
+                            }
+                        }
+                    }
+
+                    if (errors.length > 0) {
+                        errorMessage = errors.join('\n');
+                    } else {
+                        errorMessage = result.error.message || 'Unknown error';
+                    }
+                }
+                // Handle Standard Django Rest Framework validation errors (fallback)
+                else if (typeof result === 'object') {
+                    const errors = []
+                    for (const [key, value] of Object.entries(result)) {
+                        if (key === 'success' || key === 'error') continue; // Skip custom wrapper keys if they slipped through
+                        errors.push(`${key}: ${Array.isArray(value) ? value.join(' ') : value}`)
+                    }
+                    if (errors.length > 0) {
+                        errorMessage = errors.join(' | ')
+                    } else if (result.detail) {
+                        errorMessage = result.detail
+                    }
+                } else if (typeof result === 'string') {
+                    errorMessage = result
+                }
+            }
+            throw new Error(errorMessage)
         }
+    } catch (error) {
+        console.error('Registration error details:', error)
+        throw error
     }
+}
 
-    const logout = () => {
-        setUser(null)
-        setIsAuthenticated(false)
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-    }
+const logout = () => {
+    setUser(null)
+    setIsAuthenticated(false)
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+}
 
-    const updateUser = (userData) => {
-        setUser(userData)
-    }
+const updateUser = (userData) => {
+    setUser(userData)
+}
 
-    return (
-        <AuthContext.Provider value={{ user, login, logout, register, updateUser, isAuthenticated, loading }}>
-            {children}
-        </AuthContext.Provider>
-    )
+return (
+    <AuthContext.Provider value={{ user, login, logout, register, updateUser, isAuthenticated, loading }}>
+        {children}
+    </AuthContext.Provider>
+)
 }
 
 export const useAuth = () => {

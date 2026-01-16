@@ -11,6 +11,7 @@ import {
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import apiClient from '../../api/client';
 
 const MemberDashboardPage = () => {
     const { user } = useAuth();
@@ -27,25 +28,20 @@ const MemberDashboardPage = () => {
 
     const fetchStats = async () => {
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = { 'Authorization': `Bearer ${token}` };
-
             const [donationsRes, prayersRes, appointmentsRes] = await Promise.all([
-                fetch('http://127.0.0.1:8000/api/donations/', { headers }),
-                fetch('http://127.0.0.1:8000/api/prayers/', { headers }),
-                fetch('http://127.0.0.1:8000/api/appointments/', { headers })
+                apiClient.get('donations/'),
+                apiClient.get('prayers/'),
+                apiClient.get('appointments/')
             ]);
 
-            const getCount = async (res) => {
-                if (!res.ok) return 0;
-                const data = await res.json();
+            const getCount = (res) => {
+                const data = res.data;
                 const results = Array.isArray(data) ? data : (data.results || []);
                 return results.length;
             };
 
-            const getDonationTotal = async (res) => {
-                if (!res.ok) return 0;
-                const data = await res.json();
+            const getDonationTotal = (res) => {
+                const data = res.data;
                 const results = Array.isArray(data) ? data : (data.results || []);
                 return results
                     .filter(d => d.status === 'COMPLETED')
@@ -53,9 +49,9 @@ const MemberDashboardPage = () => {
             };
 
             setStats({
-                donations: await getDonationTotal(donationsRes),
-                prayers: await getCount(prayersRes),
-                appointments: await getCount(appointmentsRes)
+                donations: getDonationTotal(donationsRes),
+                prayers: getCount(prayersRes),
+                appointments: getCount(appointmentsRes)
             });
         } catch (error) {
             console.error('Error fetching stats:', error);

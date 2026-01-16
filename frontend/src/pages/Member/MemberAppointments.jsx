@@ -17,22 +17,18 @@ const MemberAppointments = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = { 'Authorization': `Bearer ${token}` };
-
             const [apptsRes, pastorsRes] = await Promise.all([
-                fetch('http://127.0.0.1:8000/api/appointments/', { headers }),
-                fetch('http://127.0.0.1:8000/api/auth/pastors/', { headers })
+                apiClient.get('appointments/'),
+                apiClient.get('auth/pastors/')
             ]);
 
-            const processRes = async (res) => {
-                if (!res.ok) return [];
-                const data = await res.json();
+            const processRes = (res) => {
+                const data = res.data;
                 return data.results || (Array.isArray(data) ? data : []);
             };
 
-            setAppointments(await processRes(apptsRes));
-            setPastors(await processRes(pastorsRes));
+            setAppointments(processRes(apptsRes));
+            setPastors(processRes(pastorsRes));
         } catch (error) {
             console.error('Error fetching appointments info:', error);
         } finally {

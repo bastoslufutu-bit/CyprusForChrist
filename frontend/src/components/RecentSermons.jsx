@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { FaPlay, FaCalendarAlt, FaUser, FaArrowRight } from 'react-icons/fa'
 import { useLanguage } from '../context/LanguageContext'
 import { formatPastorName, formatCategory } from '../utils/stringUtils'
+import apiClient from '../api/client'
 
 const RecentSermons = () => {
     const { t, language } = useLanguage()
@@ -13,8 +14,8 @@ const RecentSermons = () => {
     useEffect(() => {
         const fetchRecentSermons = async () => {
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/sermons/')
-                const data = await response.json()
+                const response = await apiClient.get('sermons/')
+                const data = response.data
                 const sermonList = Array.isArray(data) ? data : (data.results || [])
 
                 // Take only the first 3 (most recent)

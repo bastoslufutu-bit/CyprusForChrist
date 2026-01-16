@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
+import apiClient from '../../api/client';
 
 // Separate Modal Component
 const SermonFormModal = ({ sermon, onSave, onClose }) => {
@@ -115,12 +116,8 @@ const PastorSermons = () => {
     const fetchSermons = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/sermons/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const response = await apiClient.get('sermons/');
+            const data = response.data;
             setSermons(data.results || (Array.isArray(data) ? data : []));
         } catch (error) {
             console.error('Error fetching sermons:', error);
@@ -130,43 +127,35 @@ const PastorSermons = () => {
     };
 
     const handleSave = async (formData) => {
-        const token = localStorage.getItem('access_token');
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-        const url = editingSermon
-            ? `${baseUrl}/sermons/${editingSermon.id}/`
-            : `${baseUrl}/sermons/`;
-
         try {
-            const response = await fetch(url, {
-                method: editingSermon ? 'PATCH' : 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
-            });
+            const config = {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            };
 
-            if (response.ok) {
+            const response = editingSermon
+                ? await apiClient.patch(`sermons/${editingSermon.id}/`, formData, config)
+                : await apiClient.post('sermons/', formData, config);
+
+            if (response.status === 200 || response.status === 201) {
                 setShowModal(false);
                 setEditingSermon(null);
                 fetchSermons();
             } else {
-                const data = await response.json();
-                alert(JSON.stringify(data));
+                alert(JSON.stringify(response.data));
             }
         } catch (error) {
             console.error('Error saving sermon:', error);
+            if (error.response) {
+                alert(JSON.stringify(error.response.data));
+            }
         }
     };
 
     const handleDelete = async (id) => {
         if (!confirm('Voulez-vous vraiment supprimer ce sermon ?')) return;
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/sermons/${id}/`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
+            const response = await apiClient.delete(`sermons/${id}/`);
+            if (response.status === 204 || response.status === 200) {
                 fetchSermons();
             }
         } catch (error) {

@@ -13,6 +13,7 @@ import {
     FaBookOpen
 } from 'react-icons/fa'
 import { useLanguage } from '../context/LanguageContext'
+import apiClient from '../api/client'
 
 const Sermons = () => {
     const { t, language } = useLanguage()
@@ -47,15 +48,13 @@ const Sermons = () => {
         const fetchSermons = async () => {
             setLoading(true)
             try {
-                const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
-                let url = `${baseUrl}/sermons/`
-                // If specific category selected (and not 'Tous'), append query param
+                let url = 'sermons/'
                 if (selectedCategory !== 'Tous') {
                     url += `?category=${selectedCategory}`
                 }
 
-                const response = await fetch(url)
-                const data = await response.json()
+                const response = await apiClient.get(url)
+                const data = response.data
 
                 const sermonList = Array.isArray(data) ? data : (data.results || [])
 
@@ -65,22 +64,19 @@ const Sermons = () => {
                     preacher: s.pastor_name || 'Pasteur',
                     date: s.created_at,
                     youtubeId: s.youtube_id,
-                    // Map backend ID to Label for display, or keep ID if not found
                     category: s.category || 'OTHER',
-                    categoryLabel: getCategoryLabel(s.category), // Initial label, will update on render if lang changes
+                    categoryLabel: getCategoryLabel(s.category),
                     description: s.description,
                     duration: s.duration || '00:00',
                     views: s.views || 0,
                     thumbnail: s.thumbnail || 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-                    notesUrl: s.pdf_file ? (s.pdf_file.startsWith('http') ? s.pdf_file : `${(import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api').replace('/api', '')}${s.pdf_file}`) : null
+                    notesUrl: s.pdf_file ? (s.pdf_file.startsWith('http') ? s.pdf_file : `${apiClient.defaults.baseURL.replace('/api/', '')}${s.pdf_file}`) : null
                 }))
 
                 setAllSermons(formattedSermons)
                 setSermons(formattedSermons)
 
-                // Update selected sermon if list is not empty
                 if (formattedSermons.length > 0) {
-                    // Try to keep current selection if valid, otherwise pick first
                     if (selectedSermon && formattedSermons.find(s => s.id === selectedSermon.id)) {
                         // Keep current
                     } else {

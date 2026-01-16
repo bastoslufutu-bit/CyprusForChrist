@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import apiClient from '../../api/client';
 import { Link } from 'react-router-dom';
 import {
     MessageSquare,
@@ -34,24 +35,17 @@ const PastorDashboardPage = () => {
     const fetchStats = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = { 'Authorization': `Bearer ${token}` };
-
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-
             const [prayersRes, sermonsRes, donationsRes, appointmentsRes] = await Promise.all([
-                fetch(`${baseUrl}/prayers/`, { headers }),
-                fetch(`${baseUrl}/sermons/`, { headers }),
-                fetch(`${baseUrl}/donations/`, { headers }),
-                fetch(`${baseUrl}/appointments/`, { headers })
+                apiClient.get('prayers/'),
+                apiClient.get('sermons/'),
+                apiClient.get('donations/'),
+                apiClient.get('appointments/')
             ]);
 
-            const [pData, sData, dData, aData] = await Promise.all([
-                prayersRes.json(),
-                sermonsRes.json(),
-                donationsRes.json(),
-                appointmentsRes.json()
-            ]);
+            const pData = prayersRes.data;
+            const sData = sermonsRes.data;
+            const dData = donationsRes.data;
+            const aData = appointmentsRes.data;
 
             const pArr = pData.results || (Array.isArray(pData) ? pData : []);
             const sArr = sData.results || (Array.isArray(sData) ? sData : []);

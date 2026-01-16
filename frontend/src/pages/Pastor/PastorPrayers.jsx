@@ -7,6 +7,7 @@ import {
     Trash2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import apiClient from '../../api/client';
 
 const PastorPrayers = () => {
     const [prayers, setPrayers] = useState([]);
@@ -21,14 +22,11 @@ const PastorPrayers = () => {
     const fetchPrayers = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/prayers/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const response = await apiClient.get('prayers/');
+            const data = response.data;
             setPrayers(data.results || (Array.isArray(data) ? data : []));
         } catch (error) {
+            core / management / base.py
             console.error('Error fetching prayers:', error);
         } finally {
             setLoading(false);
@@ -37,18 +35,8 @@ const PastorPrayers = () => {
 
     const handleUpdateStatus = async (id, newStatus) => {
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/prayers/${id}/`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ status: newStatus })
-            });
-
-            if (response.ok) {
+            const response = await apiClient.patch(`prayers/${id}/`, { status: newStatus });
+            if (response.status === 200) {
                 fetchPrayers();
             }
         } catch (error) {
@@ -59,14 +47,8 @@ const PastorPrayers = () => {
     const handleDelete = async (id) => {
         if (!confirm('Voulez-vous vraiment supprimer cette demande de prière ?')) return;
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/prayers/${id}/`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
+            const response = await apiClient.delete(`prayers/${id}/`);
+            if (response.status === 204 || response.status === 200) {
                 fetchPrayers();
             } else {
                 alert('Erreur lors de la suppression');

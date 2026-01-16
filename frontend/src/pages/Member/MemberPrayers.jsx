@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Star, Plus, Search, Filter, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import apiClient from '../../api/client';
 
 const MemberPrayers = () => {
     const [prayers, setPrayers] = useState([]);
@@ -15,13 +16,11 @@ const MemberPrayers = () => {
     const fetchPrayers = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/prayers/', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const response = await apiClient.get('prayers/');
+            const data = response.data;
             setPrayers(data.results || (Array.isArray(data) ? data : []));
         } catch (error) {
+            core / management / base.py
             console.error('Error fetching prayers:', error);
         } finally {
             setLoading(false);
@@ -31,16 +30,8 @@ const MemberPrayers = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/prayers/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-            if (response.ok) {
+            const response = await apiClient.post('prayers/', formData);
+            if (response.status === 201 || response.status === 200) {
                 setShowModal(false);
                 setFormData({ title: '', content: '' });
                 fetchPrayers();
@@ -87,7 +78,7 @@ const MemberPrayers = () => {
                                     <Star className="w-6 h-6" />
                                 </div>
                                 <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${prayer.status === 'RESOLVED' ? 'bg-green-100 text-green-700' :
-                                        prayer.status === 'PRAYED' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                                    prayer.status === 'PRAYED' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
                                     }`}>
                                     {prayer.status === 'PENDING' ? 'En attente' : prayer.status === 'PRAYED' ? 'En prière' : 'Exaucé'}
                                 </span>

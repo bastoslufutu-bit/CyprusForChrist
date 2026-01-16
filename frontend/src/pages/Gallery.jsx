@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FaCalendarAlt, FaMapMarkerAlt, FaExpand, FaTimes } from 'react-icons/fa'
+import apiClient from '../api/client'
 
 import { useLanguage } from '../context/LanguageContext'
 
@@ -15,7 +16,7 @@ const Gallery = () => {
         if (!url) return null;
         try {
             if (url.toString().startsWith('http')) return url;
-            return `http://127.0.0.1:8000${url}`;
+            return `${apiClient.defaults.baseURL.replace('/api/', '')}${url}`;
         } catch (e) {
             return null;
         }
@@ -24,14 +25,13 @@ const Gallery = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const eventsRes = await fetch('http://127.0.0.1:8000/api/about/events/')
-                const galleryRes = await fetch('http://127.0.0.1:8000/api/about/gallery/')
+                const [eventsRes, galleryRes] = await Promise.all([
+                    apiClient.get('about/events/'),
+                    apiClient.get('about/gallery/')
+                ]);
 
-                const eventsData = await eventsRes.json()
-                const galleryData = await galleryRes.json()
-
-                setEvents(eventsData.results || eventsData)
-                setGalleryItems(galleryData.results || galleryData)
+                setEvents(eventsRes.data.results || eventsRes.data);
+                setGalleryItems(galleryRes.data.results || galleryRes.data);
             } catch (error) {
                 console.error("Erreur chargement galerie:", error)
                 setEvents([])

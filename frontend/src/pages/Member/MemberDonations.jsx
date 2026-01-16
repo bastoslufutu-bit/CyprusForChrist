@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Heart, Search, Filter, Calendar, TrendingUp, ChevronRight, Loader } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import apiClient from '../../api/client';
 
 const MemberDonations = () => {
     const [donations, setDonations] = useState([]);
@@ -15,11 +16,8 @@ const MemberDonations = () => {
     const fetchDonations = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/donations/', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const response = await apiClient.get('donations/');
+            const data = response.data;
             setDonations(data.results || (Array.isArray(data) ? data : []));
         } catch (error) {
             console.error('Error fetching donations:', error);
@@ -31,17 +29,13 @@ const MemberDonations = () => {
     const handleDonate = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/donations/create/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ amount, currency: 'EUR', is_anonymous: false })
+            const response = await apiClient.post('donations/create/', {
+                amount,
+                currency: 'EUR',
+                is_anonymous: false
             });
-            const data = await response.json();
-            if (response.ok && data.approval_url) {
+            const data = response.data;
+            if (data.approval_url) {
                 window.location.href = data.approval_url;
             }
         } catch (error) {

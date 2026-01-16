@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { Camera, AlertCircle, User as UserIcon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
+import apiClient from '../../api/client';
 
 const MemberProfile = () => {
     const { user, updateUser } = useAuth();
@@ -15,16 +16,12 @@ const MemberProfile = () => {
         formData.append('profile_picture', file);
 
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/auth/profile/', {
-                method: 'PATCH',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
+            const response = await apiClient.patch('auth/profile/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            if (response.ok) {
-                const updatedUser = await response.json();
-                updateUser(updatedUser);
+            if (response.status === 200) {
+                updateUser(response.data);
             }
         } catch (error) {
             console.error('Error uploading profile picture:', error);

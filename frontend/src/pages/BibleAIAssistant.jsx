@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FaRobot, FaUser, FaPaperPlane, FaBookOpen, FaSearch, FaChevronRight, FaChevronLeft } from 'react-icons/fa'
 import { useLanguage } from '../context/LanguageContext'
+import apiClient from '../api/client'
 
 const BibleAIAssistant = () => {
     const { language, t } = useLanguage()
@@ -106,16 +107,11 @@ const BibleAIAssistant = () => {
         setIsAiLoading(true)
 
         try {
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/ai/ask/`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    question: currentInput,
-                    language: language // Pass current language to backend
-                }),
-            })
-            const data = await response.json()
+            const response = await apiClient.post('ai/ask/', {
+                question: currentInput,
+                language: language
+            });
+            const data = response.data;
 
             const aiMessage = {
                 id: messages.length + 2,

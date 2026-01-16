@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import apiClient from '../api/client';
 import {
     BarChart,
     MessageSquare,
@@ -54,31 +55,26 @@ const PastorDashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = { 'Authorization': `Bearer ${token}` };
-
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
             const [prayersRes, sermonsRes, donationsRes, rhemasRes, availabilitiesRes, appointmentsRes] = await Promise.all([
-                fetch(`${baseUrl}/prayers/`, { headers }),
-                fetch(`${baseUrl}/sermons/`, { headers }),
-                fetch(`${baseUrl}/donations/`, { headers }),
-                fetch(`${baseUrl}/rhema/`, { headers }),
-                fetch(`${baseUrl}/appointments/availabilities/`, { headers }),
-                fetch(`${baseUrl}/appointments/`, { headers })
+                apiClient.get('prayers/'),
+                apiClient.get('sermons/'),
+                apiClient.get('donations/'),
+                apiClient.get('rhema/'),
+                apiClient.get('appointments/availabilities/'),
+                apiClient.get('appointments/')
             ]);
 
-            const [pData, sData, dData, rData, vData, aData] = await Promise.all([
-                prayersRes.json(), sermonsRes.json(), donationsRes.json(),
-                rhemasRes.json(), availabilitiesRes.json(), appointmentsRes.json()
-            ]);
+            const processRes = (res) => {
+                const data = res.data;
+                return data.results || (Array.isArray(data) ? data : []);
+            };
 
-            // Handle paginated responses (DRF PageNumberPagination)
-            const pArr = pData.results || (Array.isArray(pData) ? pData : []);
-            const sArr = sData.results || (Array.isArray(sData) ? sData : []);
-            const dArr = dData.results || (Array.isArray(dData) ? dData : []);
-            const rArr = rData.results || (Array.isArray(rData) ? rData : []);
-            const vArr = vData.results || (Array.isArray(vData) ? vData : []);
-            const aArr = aData.results || (Array.isArray(aData) ? aData : []);
+            const pArr = processRes(prayersRes);
+            const sArr = processRes(sermonsRes);
+            const dArr = processRes(donationsRes);
+            const rArr = processRes(rhemasRes);
+            const vArr = processRes(availabilitiesRes);
+            const aArr = processRes(appointmentsRes);
 
             setPrayers(pArr);
             setSermons(sArr);
@@ -87,7 +83,6 @@ const PastorDashboard = () => {
             setAvailabilities(vArr);
             setAppointments(aArr);
 
-            // Calculate stats
             setStats({
                 prayersCount: pArr.length,
                 totalDonations: dArr.reduce((sum, d) => sum + parseFloat(d.amount || 0), 0),
@@ -106,18 +101,8 @@ const PastorDashboard = () => {
         const body = { status: newStatus, ...extraData };
 
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/${endpoint}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(body)
-            });
-
-            if (response.ok) {
+            const response = await apiClient.patch(endpoint, body);
+            if (response.status === 200 || response.status === 201) {
                 fetchData();
             }
         } catch (error) {
@@ -134,14 +119,8 @@ const PastorDashboard = () => {
         else if (type === 'availability') endpoint = `appointments/availabilities/${id}/`;
 
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/${endpoint}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
+            const response = await apiClient.delete(endpoint);
+            if (response.status === 204 || response.status === 200) {
                 fetchData();
             }
         } catch (error) {
@@ -150,11 +129,9 @@ const PastorDashboard = () => {
     };
 
     const handleSaveSermon = async (formData) => {
-        const token = localStorage.getItem('access_token');
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-        const url = editingItem
-            ? `${baseUrl}/sermons/${editingItem.id}/`
-            : `${baseUrl}/sermons/`;
+        const endpoint = editingItem
+            ? `sermons/${editingItem.id}/`
+            : `sermons/`;
 
         // Client-side quick check for image
         const coverFile = formData.get('cover_image');
@@ -164,98 +141,79 @@ const PastorDashboard = () => {
         }
 
         try {
-            const response = await fetch(url, {
-                method: editingItem ? 'PATCH' : 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData // Use FormData for file uploads
+            const response = await apiClient({
+                method: editingItem ? 'patch' : 'post',
+                url: endpoint,
+                data: formData,
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
+            if (response.status === 200 || response.status === 201) {
                 setShowSermonModal(false);
                 setEditingItem(null);
                 fetchData();
                 alert(editingItem ? 'Sermon modifié avec succès !' : 'Nouveau sermon publié avec succès !');
-            } else {
-                console.error('Server error:', data);
-                // Try to extract a friendly message if it's a validation error
-                let msg = 'Erreur lors de l\'enregistrement';
-                if (data.error && data.error.details) {
-                    const details = data.error.details;
-                    if (details.cover_image) msg = `Image : ${details.cover_image[0]}`;
-                    else if (details.pdf_file) msg = `PDF : ${details.pdf_file[0]}`;
-                    else msg = JSON.stringify(details);
-                } else if (data.message) {
-                    msg = data.message;
-                }
-                alert(msg);
             }
         } catch (error) {
             console.error('Error saving sermon:', error);
-            alert('Une erreur réseau est survenue lors de la publication du sermon.');
+            const data = error.response?.data;
+            let msg = 'Erreur lors de l\'enregistrement';
+            if (data && data.error && data.error.details) {
+                const details = data.error.details;
+                if (details.cover_image) msg = `Image : ${details.cover_image[0]}`;
+                else if (details.pdf_file) msg = `PDF : ${details.pdf_file[0]}`;
+                else msg = JSON.stringify(details);
+            } else if (data && data.message) {
+                msg = data.message;
+            }
+            alert(msg);
         }
     };
 
     const handleSaveRhema = async (data) => {
-        const token = localStorage.getItem('access_token');
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-        const url = editingItem
-            ? `${baseUrl}/rhema/${editingItem.id}/`
-            : `${baseUrl}/rhema/`;
+        const endpoint = editingItem
+            ? `rhema/${editingItem.id}/`
+            : `rhema/`;
 
         try {
-            const response = await fetch(url, {
-                method: editingItem ? 'PATCH' : 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
+            const response = await apiClient({
+                method: editingItem ? 'patch' : 'post',
+                url: endpoint,
+                data: data
             });
 
-            if (response.ok) {
+            if (response.status === 200 || response.status === 201) {
                 setShowRhemaModal(false);
                 setEditingItem(null);
                 fetchData();
                 alert(editingItem ? 'Rhema modifié !' : 'Nouveau Rhema publié !');
-            } else {
-                const errorData = await response.json();
-                alert(`Erreur Rhema : ${JSON.stringify(errorData)}`);
             }
         } catch (error) {
             console.error('Error saving rhema:', error);
-            alert('Erreur réseau lors de la publication du Rhema.');
+            alert(`Erreur Rhema : ${JSON.stringify(error.response?.data || error.message)}`);
         }
     };
 
     const handleSaveAvailability = async (data) => {
-        const token = localStorage.getItem('access_token');
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-        const url = editingItem
-            ? `${baseUrl}/appointments/availabilities/${editingItem.id}/`
-            : `${baseUrl}/appointments/availabilities/`;
+        const endpoint = editingItem
+            ? `appointments/availabilities/${editingItem.id}/`
+            : `appointments/availabilities/`;
 
         try {
-            const response = await fetch(url, {
-                method: editingItem ? 'PATCH' : 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ ...data, pastor: user.id })
+            const response = await apiClient({
+                method: editingItem ? 'patch' : 'post',
+                url: endpoint,
+                data: { ...data, pastor: user.id }
             });
 
-            if (response.ok) {
+            if (response.status === 200 || response.status === 201) {
                 setShowAvailabilityModal(false);
                 setEditingItem(null);
                 fetchData();
-            } else {
-                const err = await response.json();
-                alert(JSON.stringify(err));
             }
         } catch (error) {
             console.error('Error saving availability:', error);
+            alert(JSON.stringify(error.response?.data || error.message));
         }
     };
 

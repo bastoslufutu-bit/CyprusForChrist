@@ -9,6 +9,7 @@ import {
     Loader
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import apiClient from '../../api/client';
 
 const AvailabilityFormModal = ({ availability, onSave, onClose }) => {
     const days = [
@@ -85,12 +86,8 @@ const PastorAvailability = () => {
     const fetchAvailabilities = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/appointments/availabilities/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const response = await apiClient.get('appointments/availabilities/');
+            const data = response.data;
             setAvailabilities(data.results || (Array.isArray(data) ? data : []));
         } catch (error) {
             console.error('Error fetching availabilities:', error);
@@ -100,46 +97,31 @@ const PastorAvailability = () => {
     };
 
     const handleSave = async (data) => {
-        const token = localStorage.getItem('access_token');
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-        const url = editingAvail
-            ? `${baseUrl}/appointments/availabilities/${editingAvail.id}/`
-            : `${baseUrl}/appointments/availabilities/`;
-
         try {
-            const response = await fetch(url, {
-                method: editingAvail ? 'PATCH' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(data)
-            });
+            const response = editingAvail
+                ? await apiClient.patch(`appointments/availabilities/${editingAvail.id}/`, data)
+                : await apiClient.post('appointments/availabilities/', data);
 
-            if (response.ok) {
+            if (response.status === 200 || response.status === 201) {
                 setShowModal(false);
                 setEditingAvail(null);
                 fetchAvailabilities();
             } else {
-                const errorData = await response.json();
-                alert(JSON.stringify(errorData));
+                alert(JSON.stringify(response.data));
             }
         } catch (error) {
             console.error('Error saving availability:', error);
+            if (error.response) {
+                alert(JSON.stringify(error.response.data));
+            }
         }
     };
 
     const handleDelete = async (id) => {
         if (!confirm('Voulez-vous vraiment supprimer cet horaire ?')) return;
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/appointments/availabilities/${id}/`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
+            const response = await apiClient.delete(`appointments/availabilities/${id}/`);
+            if (response.status === 204 || response.status === 200) {
                 fetchAvailabilities();
             }
         } catch (error) {

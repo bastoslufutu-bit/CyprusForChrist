@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext'
 import { formatBibleReference } from '../utils/stringUtils'
+import apiClient from '../api/client'
 
 const RhemaOfTheDay = () => {
     const { t } = useLanguage()
@@ -13,9 +14,9 @@ const RhemaOfTheDay = () => {
 
     useEffect(() => {
         // Fetch from backend API
-        fetch('http://127.0.0.1:8000/api/rhema/today/')
-            .then(response => response.json())
-            .then(data => {
+        apiClient.get('rhema/today/')
+            .then(response => {
+                const data = response.data;
                 if (data) {
                     setVerse({
                         title: data.title || '',

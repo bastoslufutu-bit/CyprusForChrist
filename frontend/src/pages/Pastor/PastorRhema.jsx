@@ -10,6 +10,7 @@ import {
     Loader
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import apiClient from '../../api/client';
 
 const RhemaFormModal = ({ rhema, onSave, onClose }) => {
     const [formData, setFormData] = useState({
@@ -74,12 +75,8 @@ const PastorRhema = () => {
     const fetchRhemas = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/rhema/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const response = await apiClient.get('rhema/');
+            const data = response.data;
             setRhemas(data.results || (Array.isArray(data) ? data : []));
         } catch (error) {
             console.error('Error fetching Rhema:', error);
@@ -89,46 +86,32 @@ const PastorRhema = () => {
     };
 
     const handleSave = async (data) => {
-        const token = localStorage.getItem('access_token');
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-        const url = editingRhema
-            ? `${baseUrl}/rhema/${editingRhema.id}/`
-            : `${baseUrl}/rhema/`;
-
         try {
-            const response = await fetch(url, {
-                method: editingRhema ? 'PATCH' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(data)
-            });
+            const response = editingRhema
+                ? await apiClient.patch(`rhema/${editingRhema.id}/`, data)
+                : await apiClient.post('rhema/', data);
 
-            if (response.ok) {
+            if (response.status === 200 || response.status === 201) {
                 setShowModal(false);
                 setEditingRhema(null);
                 fetchRhemas();
             } else {
-                const errorData = await response.json();
-                alert(JSON.stringify(errorData));
+                alert(JSON.stringify(response.data));
             }
         } catch (error) {
+            core / management / base.py
             console.error('Error saving Rhema:', error);
+            if (error.response) {
+                alert(JSON.stringify(error.response.data));
+            }
         }
     };
 
     const handleDelete = async (id) => {
         if (!confirm('Voulez-vous vraiment supprimer ce Rhema ?')) return;
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/rhema/${id}/`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
+            const response = await apiClient.delete(`rhema/${id}/`);
+            if (response.status === 204 || response.status === 200) {
                 fetchRhemas();
             }
         } catch (error) {

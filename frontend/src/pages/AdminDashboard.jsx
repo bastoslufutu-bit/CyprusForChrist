@@ -23,6 +23,7 @@ import {
     Image as ImageIcon
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import apiClient from '../api/client'
 
 const AdminDashboard = () => {
     const { user, isAuthenticated, loading } = useAuth()
@@ -51,20 +52,16 @@ const AdminDashboard = () => {
 
     const fetchDashboardData = async () => {
         try {
-            const token = localStorage.getItem('access_token')
-            const headers = { 'Authorization': `Bearer ${token}` }
-
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
             const [statsRes, chartsRes, activityRes] = await Promise.all([
-                fetch(`${baseUrl}/dashboard/stats/`, { headers }),
-                fetch(`${baseUrl}/dashboard/charts/`, { headers }),
-                fetch(`${baseUrl}/dashboard/activity/`, { headers })
-            ])
+                apiClient.get('dashboard/stats/'),
+                apiClient.get('dashboard/charts/'),
+                apiClient.get('dashboard/activity/')
+            ]);
 
-            if (statsRes.ok) setStats(await statsRes.json())
-            if (chartsRes.ok) setChartsData(await chartsRes.json())
-            if (activityRes.ok) setRecentActivities(await activityRes.json())
-
+            setStats(statsRes.data);
+            setChartsData(chartsRes.data);
+            setRecentActivities(activityRes.data);
+            core / management / base.py
         } catch (error) {
             console.error('Error fetching dashboard data:', error)
         } finally {

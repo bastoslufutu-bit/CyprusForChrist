@@ -9,6 +9,7 @@ import {
     Loader
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import apiClient from '../../api/client';
 
 const PastorDonations = () => {
     const [donations, setDonations] = useState([]);
@@ -23,12 +24,8 @@ const PastorDonations = () => {
     const fetchDonations = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/donations/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const response = await apiClient.get('donations/');
+            const data = response.data;
             setDonations(data.results || (Array.isArray(data) ? data : []));
         } catch (error) {
             console.error('Error fetching donations:', error);

@@ -2,31 +2,29 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FaCalendarAlt, FaMapMarkerAlt, FaClock, FaHistory, FaCalendarCheck } from 'react-icons/fa'
 import { useLanguage } from '../context/LanguageContext'
+import apiClient from '../api/client'
 
 const Events = () => {
     const { t, language } = useLanguage()
     const [events, setEvents] = useState([])
     const [loading, setLoading] = useState(true)
     const [view, setView] = useState('upcoming') // 'upcoming' or 'archive'
-
     useEffect(() => {
-        setLoading(true)
-        // Fetch based on view
-        // archive=true for past, archive=false (or omitted) for upcoming
-        const isArchive = view === 'archive'
-        const url = `http://127.0.0.1:8000/api/about/events/?archive=${isArchive}`
-
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
+        const fetchEvents = async () => {
+            setLoading(true)
+            try {
+                const isArchive = view === 'archive'
+                const response = await apiClient.get(`about/events/?archive=${isArchive}`)
+                const data = response.data
                 const eventList = Array.isArray(data) ? data : (data.results || [])
                 setEvents(eventList)
-                setLoading(false)
-            })
-            .catch(error => {
+            } catch (error) {
                 console.error("Error fetching events", error)
+            } finally {
                 setLoading(false)
-            })
+            }
+        }
+        fetchEvents()
     }, [view])
 
     const formatDate = (dateString) => {
