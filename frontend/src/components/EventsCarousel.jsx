@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
+import apiClient from '../api/client'
 import { FaCalendarAlt, FaMapMarkerAlt, FaChevronLeft, FaChevronRight, FaClock } from 'react-icons/fa'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import { Navigation, Pagination, Autoplay } from 'swiper/modules'
@@ -14,9 +15,9 @@ const EventsCarousel = () => {
 
     useEffect(() => {
         // Fetch from backend API
-        fetch('http://127.0.0.1:8000/api/about/events/')
-            .then(response => response.json())
-            .then(data => {
+        apiClient.get('about/events/')
+            .then(response => {
+                const data = response.data
                 const eventList = Array.isArray(data) ? data : (data.results || [])
                 if (eventList.length > 0) {
                     const formattedEvents = eventList.map(e => ({

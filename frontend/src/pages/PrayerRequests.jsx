@@ -13,6 +13,7 @@ const prayerTypes = [
 ]
 
 import { useAuth } from '../context/AuthContext'
+import apiClient from '../api/client'
 
 const PrayerRequests = () => {
     const { user } = useAuth()
@@ -26,37 +27,14 @@ const PrayerRequests = () => {
         setIsSubmitting(true)
 
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = {
-                'Content-Type': 'application/json',
-            };
-
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/prayers/`, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify({
-                    request: data.request, // Changed from title to match backend expectation of 'title' or 'content'?
-                    // Initial check showed backend expects 'title' and 'content'.
-                    // Let's re-verify backend/prayers/serializers.py to be sure.
-                    // The backend model has 'title' and 'content'. The frontend form only has 'request'.
-                    // I should map 'request' to 'content' and maybe provide a default 'title' or add a title field.
-                    // For now, let's map 'request' to 'content' and use a substring for 'title'.
-                    title: data.request.substring(0, 50) + "...",
-                    content: data.request,
-                    is_anonymous: data.isAnonymous,
-                    full_name: data.isAnonymous ? '' : data.name,
-                    // Backend handles 'user' via token automatically
-                }),
+            const response = await apiClient.post('prayers/', {
+                title: data.request.substring(0, 50) + "...",
+                content: data.request,
+                is_anonymous: data.isAnonymous,
+                full_name: data.isAnonymous ? '' : data.name,
             })
 
-            if (response.ok) {
-                const newRequest = await response.json()
-                // setRequests(prev => [newRequest, ...prev]) // If we want to show it immediately
+            if (response.status === 201 || response.status === 200) {
                 reset()
                 alert('Votre demande de prière a été envoyée. L\'équipe de prière prie pour vous!')
             } else {
