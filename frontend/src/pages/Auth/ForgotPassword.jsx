@@ -36,8 +36,10 @@ const ForgotPassword = () => {
                 }
             } else if (err.request) {
                 // La requête a été faite mais pas de réponse reçue (CORS, Réseau, etc.)
-                errorMsg = "Le serveur est injoignable. Vérifiez la configuration CORS ou l'état du serveur backend sur Render.";
-                console.error("No response received from server. Check CORS.");
+                const targetUrl = apiClient.defaults.baseURL + 'auth/password-reset/';
+                errorMsg = `Le serveur est injoignable (${targetUrl}). Vérifiez la configuration CORS ou l'état du serveur backend on Render.`;
+                console.error("No response received from server. URL target:", targetUrl);
+                console.error("Request details:", err.request);
             } else {
                 // Erreur lors de la configuration de la requête
                 errorMsg = "Erreur de configuration : " + err.message;
