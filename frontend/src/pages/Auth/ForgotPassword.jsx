@@ -20,17 +20,27 @@ const ForgotPassword = () => {
             const response = await apiClient.post('auth/password-reset/', { email });
             setMessage(String(response.data.message || "Email envoyé !"));
         } catch (err) {
-            const errorData = err.response?.data;
             let errorMsg = "Une erreur s'est produite lors de l'envoi de l'email.";
 
-            if (errorData?.error?.message) {
-                errorMsg = errorData.error.message;
-            } else if (errorData?.message) {
-                errorMsg = errorData.message;
-            } else if (errorData?.detail) {
-                errorMsg = errorData.detail;
-            } else if (typeof errorData === 'string') {
-                errorMsg = errorData;
+            if (err.response) {
+                // Le serveur a répondu avec un code d'erreur (4xx, 5xx)
+                const errorData = err.response.data;
+                if (errorData?.error?.message) {
+                    errorMsg = errorData.error.message;
+                } else if (errorData?.message) {
+                    errorMsg = errorData.message;
+                } else if (errorData?.detail) {
+                    errorMsg = errorData.detail;
+                } else if (typeof errorData === 'string') {
+                    errorMsg = errorData;
+                }
+            } else if (err.request) {
+                // La requête a été faite mais pas de réponse reçue (CORS, Réseau, etc.)
+                errorMsg = "Le serveur est injoignable. Vérifiez la configuration CORS ou l'état du serveur backend sur Render.";
+                console.error("No response received from server. Check CORS.");
+            } else {
+                // Erreur lors de la configuration de la requête
+                errorMsg = "Erreur de configuration : " + err.message;
             }
 
             setError(String(errorMsg));

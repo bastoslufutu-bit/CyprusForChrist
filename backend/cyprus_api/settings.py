@@ -309,6 +309,12 @@ CHURCH_INFO = {
 # Frontend URL for emails
 FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
 
+# Auto-add FRONTEND_URL to CORS if it looks like a valid origin
+if FRONTEND_URL and FRONTEND_URL.startswith('http'):
+    origin = FRONTEND_URL.rstrip('/')
+    if origin not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(origin)
+
 # Security Settings
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
