@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, User, Plus, Search, MapPin, MessageSquare, Loader, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import apiClient from '../../api/client';
 
 const MemberAppointments = () => {
     const [appointments, setAppointments] = useState([]);
@@ -42,22 +43,14 @@ const MemberAppointments = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('access_token');
-            const response = await fetch('http://127.0.0.1:8000/api/appointments/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    pastor: formData.pastor_id,
-                    subject: formData.subject,
-                    requested_date: formData.requested_date,
-                    requested_time: formData.requested_time,
-                    notes: formData.notes
-                })
+            const response = await apiClient.post('appointments/', {
+                pastor: formData.pastor_id,
+                subject: formData.subject,
+                requested_date: formData.requested_date,
+                requested_time: formData.requested_time,
+                notes: formData.notes
             });
-            if (response.ok) {
+            if (response.status === 201 || response.status === 200) {
                 setShowModal(false);
                 setFormData({ pastor_id: '', subject: '', requested_date: '', requested_time: '', notes: '' });
                 fetchData();
@@ -117,7 +110,7 @@ const MemberAppointments = () => {
                                     </div>
                                     <div className="flex items-center">
                                         <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${appt.status === 'CONFIRMED' ? 'bg-green-100 text-green-700' :
-                                                appt.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                            appt.status === 'CANCELLED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
                                             }`}>
                                             {appt.status_display}
                                         </span>

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AppointmentTimer from '../../components/Pastor/AppointmentTimer';
+import apiClient from '../../api/client';
 
 const ConfirmAppointmentModal = ({ isOpen, onClose, onConfirm, appointment }) => {
     const [location, setLocation] = useState('');
@@ -86,12 +87,8 @@ const PastorAppointments = () => {
     const fetchAppointments = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/appointments/`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const response = await apiClient.get('appointments/');
+            const data = response.data;
             setAppointments(data.results || (Array.isArray(data) ? data : []));
         } catch (error) {
             console.error('Error fetching appointments:', error);
@@ -102,18 +99,8 @@ const PastorAppointments = () => {
 
     const handleUpdate = async (id, status, extraData = {}) => {
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/appointments/${id}/`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ status, ...extraData })
-            });
-
-            if (response.ok) {
+            const response = await apiClient.patch(`appointments/${id}/`, { status, ...extraData });
+            if (response.status === 200) {
                 fetchAppointments();
             }
         } catch (error) {
@@ -124,14 +111,8 @@ const PastorAppointments = () => {
     const handleDelete = async (id) => {
         if (!confirm('Voulez-vous vraiment supprimer ce rendez-vous ?')) return;
         try {
-            const token = localStorage.getItem('access_token');
-            const baseUrl = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api';
-            const response = await fetch(`${baseUrl}/appointments/${id}/`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-
-            if (response.ok) {
+            const response = await apiClient.delete(`appointments/${id}/`);
+            if (response.status === 204 || response.status === 200) {
                 fetchAppointments();
             } else {
                 alert('Erreur lors de la suppression');
