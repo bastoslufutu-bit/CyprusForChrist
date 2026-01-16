@@ -22,9 +22,15 @@ const MemberAppointments = () => {
                 apiClient.get('auth/pastors/')
             ]);
 
+            console.log('DEBUG [Appointments]:', apptsRes.data);
+            console.log('DEBUG [Pastors]:', pastorsRes.data);
+
             const processRes = (res) => {
                 const data = res.data;
-                return data.results || (Array.isArray(data) ? data : []);
+                // Logique plus robuste pour extraire la liste
+                if (Array.isArray(data)) return data;
+                if (data && data.results && Array.isArray(data.results)) return data.results;
+                return [];
             };
 
             setAppointments(processRes(apptsRes));
@@ -150,29 +156,33 @@ const MemberAppointments = () => {
                     <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-gray-100 dark:border-slate-700 shadow-sm">
                         <h3 className="font-bold text-gray-900 dark:text-white mb-6">Nos Pasteurs</h3>
                         <div className="space-y-6">
-                            {pastors.map(pastor => (
-                                <div key={pastor.id} className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20 overflow-hidden flex-shrink-0">
-                                        {pastor.profile_picture ? (
-                                            <img src={pastor.profile_picture} alt="" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-indigo-600">
-                                                <User className="w-6 h-6" />
-                                            </div>
-                                        )}
+                            {pastors.length > 0 ? (
+                                pastors.map(pastor => (
+                                    <div key={pastor.id} className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20 overflow-hidden flex-shrink-0">
+                                            {pastor.profile_picture ? (
+                                                <img src={pastor.profile_picture} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-indigo-600">
+                                                    <User className="w-6 h-6" />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{pastor.full_name}</p>
+                                            <p className="text-[10px] text-gray-500 truncate">{pastor.bio || 'Consultation spirituelle'}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => { setFormData({ ...formData, pastor_id: pastor.id }); setShowModal(true); }}
+                                            className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all"
+                                        >
+                                            <ChevronRight className="w-5 h-5" />
+                                        </button>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-sm text-gray-900 dark:text-white truncate">{pastor.full_name}</p>
-                                        <p className="text-[10px] text-gray-500 truncate">{pastor.bio || 'Consultation spirituelle'}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => { setFormData({ ...formData, pastor_id: pastor.id }); setShowModal(true); }}
-                                        className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all"
-                                    >
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <p className="text-sm text-gray-500 text-center py-4">Aucun pasteur disponible pour le moment.</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -194,9 +204,15 @@ const MemberAppointments = () => {
                                         onChange={(e) => setFormData({ ...formData, pastor_id: e.target.value })}
                                         className="w-full p-3 bg-gray-50 dark:bg-slate-900 rounded-xl border-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
                                     >
-                                        <option value="">Sélectionner un pasteur</option>
+                                        <option value="">{pastors.length > 0 ? "Sélectionner un pasteur" : "Chargement des pasteurs..."}</option>
                                         {pastors.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
                                     </select>
+                                    {pastors.length === 0 && !loading && (
+                                        <p className="text-[10px] text-amber-600 mt-1 flex items-center gap-1">
+                                            <AlertCircle className="w-3 h-3" />
+                                            Aucun pasteur trouvé. Veuillez contacter l'administrateur.
+                                        </p>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-bold mb-2 text-gray-700 dark:text-gray-300">Sujet</label>

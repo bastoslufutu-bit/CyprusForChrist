@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import generics, status, permissions, views
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -153,7 +154,12 @@ class PastorListView(generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-        return User.objects.filter(role='PASTOR')
+        # Utiliser Q pour être plus robuste aux variations de casse en production
+        return User.objects.filter(
+            Q(role='PASTOR') | 
+            Q(role='Pastor') | 
+            Q(role='pastor')
+        )
     
     def get_serializer_class(self):
         from .serializers import PastorSerializer
