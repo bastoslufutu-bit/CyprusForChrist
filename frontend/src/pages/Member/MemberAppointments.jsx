@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, User, Plus, Search, MapPin, MessageSquare, Loader, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, User, Plus, Search, MapPin, MessageSquare, Loader, ChevronRight, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import apiClient from '../../api/client';
 
@@ -204,8 +204,12 @@ const MemberAppointments = () => {
                                         onChange={(e) => setFormData({ ...formData, pastor_id: e.target.value })}
                                         className="w-full p-3 bg-gray-50 dark:bg-slate-900 rounded-xl border-none focus:ring-2 focus:ring-indigo-500 dark:text-white"
                                     >
-                                        <option value="">{pastors.length > 0 ? "Sélectionner un pasteur" : "Chargement des pasteurs..."}</option>
-                                        {pastors.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}
+                                        <option value="">
+                                            {loading ? "Chargement des pasteurs..." :
+                                                pastors.length > 0 ? "Sélectionner un pasteur" :
+                                                    "Aucun pasteur disponible"}
+                                        </option>
+                                        {pastors.map(p => <option key={p.id} value={p.id}>{p.full_name || p.username}</option>)}
                                     </select>
                                     {pastors.length === 0 && !loading && (
                                         <p className="text-[10px] text-amber-600 mt-1 flex items-center gap-1">

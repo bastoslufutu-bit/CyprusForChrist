@@ -72,7 +72,6 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.error('Registration error details:', error)
             const result = error.response?.data
-            core / management / base.py
             let errorMessage = 'Registration failed'
             if (result) {
                 // Extracting error logic follows... (kept for clarity)
@@ -124,28 +123,24 @@ export const AuthProvider = ({ children }) => {
             }
             throw new Error(errorMessage)
         }
-    } catch (error) {
-        console.error('Registration error details:', error)
-        throw error
     }
-}
 
-const logout = () => {
-    setUser(null)
-    setIsAuthenticated(false)
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('refresh_token')
-}
+    const logout = () => {
+        setUser(null)
+        setIsAuthenticated(false)
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+    }
 
-const updateUser = (userData) => {
-    setUser(userData)
-}
+    const updateUser = (userData) => {
+        setUser(userData)
+    }
 
-return (
-    <AuthContext.Provider value={{ user, login, logout, register, updateUser, isAuthenticated, loading }}>
-        {children}
-    </AuthContext.Provider>
-)
+    return (
+        <AuthContext.Provider value={{ user, login, logout, register, updateUser, isAuthenticated, loading }}>
+            {children}
+        </AuthContext.Provider>
+    )
 }
 
 export const useAuth = () => {
